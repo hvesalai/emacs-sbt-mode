@@ -59,7 +59,7 @@ interacting with sbt from emacs. The core functionality includes:
 
 
     ```
-    sbtPlugins := true
+    sbtPlugin := true
     ```
 
 2. Install the mode into emacs. Currently the mode is not available through any package manager (that will change soon), so the only way is to do the old-style manual install:
