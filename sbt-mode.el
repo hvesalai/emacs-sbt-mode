@@ -10,6 +10,9 @@
 (require 'sbt-mode-comint)
 (require 'sbt-mode-rgrep)
 
+(eval-when-compile
+  (defun scala-mode:set-scala-syntax-mode ()))
+
 (defcustom sbt:program-name "sbt"
   "Program invoked by the `sbt:run-sbt' command."
   :type 'string
@@ -26,6 +29,7 @@
   :group 'sbt)
 
 (defvar sbt:previous-command sbt:default-command)
+(make-variable-buffer-local 'sbt:previous-command)
 
 (defvar sbt:command-history-temp nil)
 
@@ -179,7 +183,6 @@ buffer called *sbt*projectdir."
 \\{sbt:mode-map}"
   (use-local-map sbt:mode-map)
   (ignore-errors (scala-mode:set-scala-syntax-mode))
-  (make-variable-buffer-local 'sbt:previous-command)
   (add-hook 'sbt-mode-hook 'sbt:initialize-for-comint-mode)
   (add-hook 'sbt-mode-hook 'sbt:initialize-for-compilation-mode))
 
