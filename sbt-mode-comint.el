@@ -62,7 +62,7 @@ as the comint-input-ring on console start-up"
     (setq comint-buffer-maximum-size 4096)
     (setq comint-output-filter-functions '(ansi-color-process-output comint-postoutput-scroll-to-bottom))
     (setq ansi-color-for-comint-mode sbt:ansi-support)
-    (setq sbt:previous-history-file nil)
+    (set (make-local-variable sbt:previous-history-file) nil)
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
 ;    (add-hook 'comint-input-filter-functions 'sbt:enable-paste-mode)
 ))
@@ -85,7 +85,7 @@ as the comint-input-ring on console start-up"
              (cond ((eq submode 'sbt) sbt:sbt-history-file)
                    ((eq submode 'console) sbt:console-history-file))))
         (when (and comint-input-ring-file-name 
-                   (not (eq comint-input-ring-file-name sbt:previous-history-file)))
+                   (not (equal comint-input-ring-file-name sbt:previous-history-file)))
           (setq sbt:previous-history-file comint-input-ring-file-name)
           (comint-read-input-ring)))))
   input)

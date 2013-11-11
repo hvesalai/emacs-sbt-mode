@@ -43,6 +43,6 @@ fails to find the sbt root."
 
 (defun sbt:buffer-in-project-function (root)
   "Return a lambda that returns 't if the current buffer is in the ROOT project."
-  `(lambda () (eq (sbt:find-root) ,root)))
+  `(lambda () (equal (sbt:find-root) ,root)))
 
 (provide 'sbt-mode-project)
