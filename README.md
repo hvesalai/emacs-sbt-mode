@@ -197,8 +197,9 @@ mimics rgrep, so see **C-h f** *rgrep* for help.
 ### Finding things
 
 Besides *sbt-grep* you have also two other commands available for
-finding things at point using grep. These commands work only if you
-have [scala-mode2](https://github.com/hvesalai/scala-mode2) installed.
+finding things at point using grep. These commands work more reliably
+if you have [scala-mode2](https://github.com/hvesalai/scala-mode2) 
+installed.
 
 - **M-x** *sbt-find-definitions* will search for the definition of the
     thing at point from the project `.scala` and `.java` files.
