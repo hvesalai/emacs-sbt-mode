@@ -200,9 +200,9 @@ Besides *sbt-grep* you have also two other commands available for
 finding things at point using grep.
 
 - **M-x** *sbt-find-definitions* will search for the definition of the
-    thing at point from the project `.scala` files.
+    thing at point from the project `.scala` and `.java` files.
 - **M-x** *sbt-find-usages* will search for occurances of the id at
-    point from the project `.scala` files.
+    point from the project `.scala` and `.java` files.
 
 The commands work better if you have scala-mode2 installed.
 

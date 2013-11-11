@@ -60,7 +60,7 @@
             (dir (read-directory-name "Base directory: " (sbt:find-root) nil t))
             (confirm (equal current-prefix-arg '(4))))
        (list regexp files dir confirm))))
-  (rgrep (concat (scala-syntax:regexp-for-id id)) "*s.scala" dir confirm))
+  (rgrep (concat (scala-syntax:regexp-for-id id)) "*.scala *.java" dir confirm))
 
 ;;;###autoload
 (defun sbt-find-definitions (id &optional confirm)
@@ -71,7 +71,7 @@
      (list (grep-read-regexp) (equal current-prefix-arg '(4)))))
   (let ((grep-setup-hook (copy-list grep-setup-hook))) ; let-bind a copy of the hook
     (add-hook 'grep-setup-hook 'sbt:grep-setup-function)
-    (rgrep (concat "\\(class\\|type\\|trait\\|object\\|va[rl]\\|def\\|package\\)[ \\t]\\+" (scala-syntax:regexp-for-id id)) "*.scala" (sbt:find-root) confirm)))
+    (rgrep (concat "\\(class\\|type\\|trait\\|object\\|va[rl]\\|def\\|package\\)[ \\t]\\+" (scala-syntax:regexp-for-id id)) "*.scala *.java" (sbt:find-root) confirm)))
 
 (defun sbt:grep-setup-function ()
   (set (make-local-variable 'compilation-auto-jump-to-first-error) t)
