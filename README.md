@@ -133,7 +133,7 @@ easily accessible key position.
 
    ;; use sbt-run-previous-command to re-compile your code after changes
    (local-set-key (kbd "C-x '") 'sbt-run-previous-command)
-)
+))
 ```
 
 Also check that your global binding for the *next-error* function is
