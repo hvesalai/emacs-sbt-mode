@@ -217,3 +217,10 @@ separate lines, use **M-x** *comint-accumulate* (or the respective
 key-binding as adviced above in the customization section). This way,
 if you need to modify the code, you can use **M-p** to recall the
 whole snippet for reworking.
+
+## Credits
+
+Mode development: Heikki Vesalainen
+
+While a complete rewrite, the mode was inspired by the 
+sbt-support provided by the old scala-mode.
