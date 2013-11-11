@@ -79,7 +79,9 @@ sbt:default-command, if no other command has yet been run)."
   (interactive)
   (sbt:command (sbt:get-previous-command)))
 
-(defun sbt-completion-at-point () (interactive) (sbt:completion-at-point))
+(defun sbt-completion-at-point ()
+  "Complete the command at point. Works both in sbt shell and scala console."
+ (interactive) (sbt:completion-at-point))
 
 (defun sbt:clear (&optional buffer)
   "Clear (erase) the SBT buffer."
