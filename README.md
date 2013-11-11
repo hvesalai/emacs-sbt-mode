@@ -17,7 +17,9 @@ interacting with sbt from emacs. The core functionality includes:
 
 ## Setting the mode up for use
 
-1. Make sure you have the lastest version of **Gnu Emacs** installed. The mode has been developed on 24.2.
+1. Make sure you have the lastest version of **Gnu Emacs** installed. The mode has been developed on 24.2. 
+
+    For best performance of scala console completions, also install the latest version of [scala-mode2](https://github.com/hvesalai/scala-mode2).
 
 2. Add the CompletionPlugin to your sbt environment. This will allow you to tab-complete sbt commands from emacs. It is advisable to make the plugin available to all your projects at once by adding it to your `~/.sbt` directory.
 
@@ -188,7 +190,7 @@ Tab completion is also available when using the described commands.
 
 ### Grepping code
 
-A special version of the *rgrep* command is available in sbt-mode. Use
+A special version of the *rgrep* command is available with sbt-mode. Use
 **M-x** *sbt-grep* to grep files in the sbt project. The command
 mimics rgrep, so see **C-h f** *rgrep* for help.
 
