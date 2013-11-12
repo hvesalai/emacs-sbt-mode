@@ -17,17 +17,11 @@ interacting with sbt from emacs. The core functionality includes:
 
 ## Setting the mode up for use
 
-1. Make sure you have the lastest version of **Gnu Emacs**
-installed. The mode has been developed on 24.2.
+1. Make sure you have the lastest version of **Gnu Emacs** installed. The mode has been developed on 24.2. 
 
-    For best performance of scala console completions, also install
-    the latest version of
-    [scala-mode2](https://github.com/hvesalai/scala-mode2).
+    For best performance of scala console completions, also install the latest version of [scala-mode2](https://github.com/hvesalai/scala-mode2).
 
-2. Add the CompletionPlugin to your sbt environment. This will allow
-you to tab-complete sbt commands from emacs. It is advisable to make
-the plugin available to all your projects at once by adding it to your
-`~/.sbt` directory.
+2. Add the CompletionPlugin to your sbt environment. This will allow you to tab-complete sbt commands from emacs. It is advisable to make the plugin available to all your projects at once by adding it to your `~/.sbt` directory.
 
     The directory depends on the sbt version:
 
@@ -68,34 +62,9 @@ the plugin available to all your projects at once by adding it to your
     sbtPlugin := true
     ```
 
-2. There are two mechanisms that can be used for the installation of
-the mode into Emacs. The preferred manner is to use the built-in
-package manager of Emacs 24 (i.e. `package.el`) and
-the other is to manually clone the git repository, add the path to the mode
-to the load-path and then to require it. For more information regarding
-`package.el` please refer to the [EmacsWiki](http://emacswiki.org/emacs/ELPA).
+2. Install the mode into emacs. Currently the mode is not available through any package manager (that will change soon), so the only way is to do the old-style manual install:
 
-    1. Package.el:
-        Using the package.el within Emacs installation is the recommended
-        manner to install sbt-mode as it allows for continuous, easy
-        updating from within Emacs itself. Adding the MELPA
-        repository to your emacs initialization will be required to locate
-        the packages.
-       
-        Add the following to your emacs config (.emacs, init.el, etc).
-        If such a definition already exists, ensure that it contains
-        the MELPA declaration.
-
-        ```lisp
-        (require 'package)
-        (add-to-list 'package-archives
-                     '("melpa" . "http://melpa.milkbox.net/packages/") t)
-        (package-initialize)
-        (unless (package-installed-p 'sbt-mode)
-          (package-refresh-contents) (package-install 'sbt-mode))
-        ```
-
-    2. Manual:
+    1. Manual:
         Download the files to a local directory. You can use the *git clone*
         command, this will create a new directory called sbt-mode.
 
@@ -178,8 +147,7 @@ A good alternative is **M-'**.
 
 ## Commands and key-map
 
-As sbt-mode is based on comint-mode and compilation-mode, all the
-commands of those modes are available.
+As sbt-mode is based on comint-mode and compilation-mode, all the commands of those modes are available.
 
 To see what commands sbt-mode adds, just type
 **C-h f** *sbt-* **TAB** and choose a command to get its description.
