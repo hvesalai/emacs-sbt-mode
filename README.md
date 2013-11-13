@@ -206,6 +206,9 @@ installed.
 - **M-x** *sbt-find-usages* will search for occurances of the id at
     point from the project `.scala` and `.java` files.
 
+Use the `next-error` and `previous-error` command (or key-binding) to
+jump to the locus of each search hit.
+
 ### Scala console
 
 You can start the scala console from within sbt as normally (use
