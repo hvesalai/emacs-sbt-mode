@@ -166,6 +166,10 @@ Your sbt command history will be loaded and it is available through
 the **M-x** *comint-previous-input* command which is bound by default
 to the **M-p** key.
 
+You may also run previous commands by going to the line in the buffer
+that contains the command and pressing **RET**. To jump back to the
+last line use **M->**.
+
 ### Compilation
 
 After starting the sbt shell as described above, use the following
