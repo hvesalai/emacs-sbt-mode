@@ -117,7 +117,7 @@ as the comint-input-ring on console start-up"
            (not (looking-at-p sbt:sbt-prompt-regexp)))
      (error "sbt is not ready (no prompt found)"))
    (when (or (null input) (string-match "^\\s *$" input))
-     (setq input "\"\""))
+     (setq input ""))
    (setq input (concat "completions " input))
    (message "Querying sbt for completions...")
    (prog1 

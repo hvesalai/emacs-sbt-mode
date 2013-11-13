@@ -40,19 +40,19 @@ interacting with sbt from emacs. The core functionality includes:
     object CompletionsPlugin extends Plugin {
       override lazy val settings = Seq(commands += completions)
 
-      lazy val completions = Command.single("completions") { (state, input) =>
-        val str = if (input == "\"\"") "" else input
-
-        Parser.completions(state.combinedParser, str, 1).get map {
-          c => if (c.isEmpty) str else str + c.append
-        } foreach { c =>
-          println("[completions] " + c.replaceAll("\n", " "))
+      lazy val completions = Command.make("completions") { state =>
+        Parser.token(Parsers.trimmed(Command.spacedAny("completions")) ?? "") map { input =>
+          () => {
+            Parser.completions(state.combinedParser, input, 1).get map {
+              c => if (c.isEmpty) input else input + c.append
+            } foreach { c =>
+              println("[completions] " + c.replaceAll("\n", " "))
+            }
+            state
+          }
         }
-
-        state
       }
     }
-
     ```
 
     `build.sbt`:
