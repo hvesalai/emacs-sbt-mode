@@ -72,40 +72,41 @@ as the comint-input-ring on console start-up"
 line.")
 
 (defun sbt:ansi-filter (input)
-  (save-excursion
-    ;; go to start of first line just inserted
-    (comint-goto-process-mark)
-    (goto-char (max (point-min) (- (point) (string-width input))))
-    (forward-line 0)
-    (while (re-search-forward sbt:ansi-clear-line nil t)
-      ;; delete the ansi code and the previous line
-      (delete-region (save-excursion (forward-line -1) (point)) (match-end 0))))
-  input
-)
+  (when (sbt:mode-p)
+    (save-excursion
+      ;; go to start of first line just inserted
+      (comint-goto-process-mark)
+      (goto-char (max (point-min) (- (point) (string-width input))))
+      (forward-line 0)
+      (while (re-search-forward sbt:ansi-clear-line nil t)
+	;; delete the ansi code and the previous line
+	(delete-region (save-excursion (forward-line -1) (point)) (match-end 0))))
+    input))
 
 (defun sbt:switch-submode (input)
-  (let ((submode
-         (save-excursion 
-           (save-match-data 
-	     ;; go to start of last line with text inserted by comint
-             (comint-goto-process-mark)
-             (skip-chars-backward " \n\r\t")
-             (forward-line 0)
-             (cond ((looking-at sbt:sbt-prompt-regexp) 'sbt) 
-                   ((looking-at sbt:console-prompt-regexp) 'console)
-                   ((looking-at sbt:paste-mode-prompt-regexp) 'paste-mode))))))
-    (when submode
-      (setq comint-use-prompt-regexp (not (eq submode 'paste-mode)))
+  (when (sbt:mode-p)
+    (let ((submode
+	   (save-excursion 
+	     (save-match-data 
+	       ;; go to start of last line with text inserted by comint
+	       (comint-goto-process-mark)
+	       (skip-chars-backward " \n\r\t")
+	       (forward-line 0)
+	       (cond ((looking-at sbt:sbt-prompt-regexp) 'sbt) 
+		     ((looking-at sbt:console-prompt-regexp) 'console)
+		     ((looking-at sbt:paste-mode-prompt-regexp) 'paste-mode))))))
+      (when submode
+	(setq comint-use-prompt-regexp (not (eq submode 'paste-mode)))
 
-      (let ((comint-input-history-ignore "^completions\\|// completions$")
-            (comint-input-ring-file-name
-             (cond ((eq submode 'sbt) sbt:sbt-history-file)
-                   ((eq submode 'console) sbt:console-history-file))))
-        (when (and comint-input-ring-file-name 
-                   (not (equal comint-input-ring-file-name sbt:previous-history-file)))
-          (setq sbt:previous-history-file comint-input-ring-file-name)
-          (comint-read-input-ring)))))
-  input)
+	(let ((comint-input-history-ignore "^completions\\|// completions$")
+	      (comint-input-ring-file-name
+	       (cond ((eq submode 'sbt) sbt:sbt-history-file)
+		     ((eq submode 'console) sbt:console-history-file))))
+	  (when (and comint-input-ring-file-name 
+		     (not (equal comint-input-ring-file-name sbt:previous-history-file)))
+	    (setq sbt:previous-history-file comint-input-ring-file-name)
+	    (comint-read-input-ring)))))
+    input))
 
 ;;;
 ;;; Completion functionality

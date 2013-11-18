@@ -21,4 +21,8 @@
   (unless (derived-mode-p 'sbt-mode) 
     (error "Current buffer %s is not an sbt-buffer" (current-buffer))))
 
+(defun sbt:mode-p ()
+  "Return non-nil if the current buffer is sbt-buffer"
+  (derived-mode-p 'sbt-mode))
+
 (provide 'sbt-mode-buffer)
