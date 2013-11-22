@@ -43,7 +43,7 @@ MODE_NAME_VERSION       = $(MODE_NAME)-$(VERSION)
 all: .latest-build
 
 clean:
-	$(RM) *.elc .latest-* autoloads.el
+	$(RM) *.elc .latest-* autoloads.el *.tar
 	[ ! -d $(MODE_NAME_VERSION) ] || $(RM) $(MODE_NAME_VERSION)/*
 	[ ! -d $(MODE_NAME_VERSION) ] || $(RMDIR) $(MODE_NAME_VERSION)
 

@@ -123,7 +123,14 @@ line.")
 
 (defconst sbt:completions-regex "^\\[completions\\] \\(.*\\)?$")
 (defconst sbt:repl-completions-string 
-  "{ val input = \"$1\"; val completer = new scala.tools.nsc.interpreter.JLineCompletion($intp).completer; val completions = completer.complete(input, input.length); val prefix = input.substring(0, completions.cursor); completions.candidates.foreach(c => println(\"[completions] \" + c))} // completions")
+  ;; waiting for better times... maybe some day we will have a completions command in 
+  ;; the scala-console
+  (concat "{ val input = \"$1\"; "
+          "val completer = new scala.tools.nsc.interpreter.JLineCompletion($intp).completer; "
+	  "val completions = completer.complete(input, input.length); "
+	  "val prefix = input.substring(0, completions.cursor); "
+	  "completions.candidates.foreach(c => println(\"[completions] \" + c))} // completions")
+  "A command to send to scala console to get completions for $1 (an escaped string).")
 
 (defun sbt:get-sbt-completions (input)
    (sbt:require-buffer)
@@ -136,7 +143,9 @@ line.")
      (error "sbt is not ready (no prompt found)"))
    (when (or (null input) (string-match "^\\s *$" input))
      (setq input ""))
-   (setq input (concat "completions " input))
+   (setq input (concat "completions \"" 
+		       (sbt:scala-escape-string input) 
+		       "\""))
    (message "Querying sbt for completions...")
    (prog1 
        (comint-redirect-results-list input
@@ -192,5 +201,22 @@ line.")
             (t
              (goto-char point)
              "No sbt or scala prompt found before process mark")))))
+
+(defun sbt:send-region (start end)
+  (unless (comint-check-proc (sbt:buffer-name))
+    (error "sbt is not running in buffer %s" (sbt:buffer-name)))
+  (save-excursion 
+    (goto-char end)
+    (skip-syntax-forward ">")
+    (forward-comment (- (point-max)))
+    (setq end (point)))
+  (save-excursion
+    (goto-char start)
+    (forward-comment (point-max))
+    (setq start (point)))
+  (unless (> end start) (error "mark a region of code first"))
+  (display-buffer (sbt:buffer-name))
+  (comint-send-region (sbt:buffer-name) start end)
+  (comint-send-string (sbt:buffer-name) "\n"))
 
 (provide 'sbt-mode-comint)

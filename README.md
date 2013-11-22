@@ -24,15 +24,16 @@ installed. The mode has been developed on 24.2.
     the latest version of
     [scala-mode2](https://github.com/hvesalai/scala-mode2).
 
-2. Add the CompletionPlugin to your sbt environment. This will allow
-you to tab-complete sbt commands from emacs. It is advisable to make
-the plugin available to all your projects at once by adding it to your
-`~/.sbt` directory.
+2. To use tab-completion, your sbt version must support the
+`completions` command. The command will be available in sbt 0.13.2,
+but for earlier versions you need to use a plugin.
 
-    The directory depends on the sbt version:
+    Add the CompletionPlugin to your sbt environment as a global
+    plugin available to all projects. The directory depends on the sbt
+    version:
 
     - sbt 0.12: `~/.sbt/plugins/`
-    - sbt 0.13: `~/.sbt/0.13/plugins/`
+    - sbt 0.13.1: `~/.sbt/0.13/plugins/`
 
     You need these two files in the plugins directory:
 
@@ -42,12 +43,16 @@ the plugin available to all your projects at once by adding it to your
     import sbt._
     import Keys._
     import sbt.complete._
+    import Parsers._
 
     object CompletionsPlugin extends Plugin {
       override lazy val settings = Seq(commands += completions)
 
       lazy val completions = Command.make("completions") { state =>
-        Parser.token(Parsers.trimmed(Command.spacedAny("completions")) ?? "") map { input =>
+        val notQuoted = (NotQuoted ~ Parsers.any.*) map {case (nq, s) => (nq +: s).mkString}
+        val quotedOrUnquotedSingleArgument = Space ~> (StringVerbatim | StringEscapable | notQuoted)
+
+        Parser.token(quotedOrUnquotedSingleArgument ?? "" examples("", " ")) map { input =>
           () => {
             Parser.completions(state.combinedParser, input, 1).get map {
               c => if (c.isEmpty) input else input + c.append
@@ -256,6 +261,12 @@ separate lines, use **M-x** *comint-accumulate* (or the respective
 key-binding as adviced above in the customization section). This way,
 if you need to modify the code, you can use **M-p** to recall the
 whole snippet for reworking.
+
+You can also send a region of code from an other buffer in the same
+project. First set the mark to the other end of the region to send and
+the point (cursor) the other. Then run the **M-x** *sbt-send-region*
+command. The command will skip any whitespace or comments at the
+beginning and end of the region.
 
 ## Credits
 

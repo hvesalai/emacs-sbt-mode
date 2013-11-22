@@ -51,9 +51,9 @@
 
 ;;;###autoload
 (defun sbt-command (command)
-  "Send a command to the sbt running in the '*sbt*name'
-buffer. Prompts for the command to send when in interactive
-mode. You can use tab completion.
+  "Send a command to the sbt process of the current buffer's sbt project.
+Prompts for the command to send when in interactive mode. You can
+use tab completion.
 
 This command does the following:
   - displays the buffer without moving focus to it
@@ -80,8 +80,17 @@ sbt:default-command, if no other command has yet been run)."
   (sbt:command (sbt:get-previous-command)))
 
 (defun sbt-completion-at-point ()
-  "Complete the command at point. Works both in sbt shell and scala console."
+  "Complete the command at point. Works both in sbt shell and
+scala console."
  (interactive) (sbt:completion-at-point))
+
+(defun sbt-send-region (start end)
+  "Send the selected region (between the mark and the current
+point) to the sbt process of the current buffer's sbt
+project. Whitespace and comments at the beginning or end of the
+region are not sent."
+  (interactive "r")
+  (sbt:send-region))
 
 (defun sbt:clear (&optional buffer)
   "Clear (erase) the SBT buffer."
@@ -125,7 +134,7 @@ buffer called *sbt*projectdir."
 
     (when (not (or (executable-find (nth 0 sbt-command-line))
                    (file-executable-p (concat project-root (nth 0 sbt-command-line)))))
-      (error "Could not find %s in %s or on PATH" (nth 0 sbt-command-line) project-root))
+      (error "Could not find %s in %s or on PATH. Please customize the sbt:program-name variable." (nth 0 sbt-command-line) project-root))
 
     ;; kill existing sbt
     (when (and kill-existing-p (get-buffer buffer-name))
