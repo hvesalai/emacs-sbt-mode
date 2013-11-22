@@ -90,7 +90,7 @@ point) to the sbt process of the current buffer's sbt
 project. Whitespace and comments at the beginning or end of the
 region are not sent."
   (interactive "r")
-  (sbt:send-region))
+  (sbt:send-region start end))
 
 (defun sbt:clear (&optional buffer)
   "Clear (erase) the SBT buffer."

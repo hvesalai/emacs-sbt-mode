@@ -62,6 +62,7 @@ as the comint-input-ring on console start-up"
     (setq comint-buffer-maximum-size 4096)
     (setq comint-output-filter-functions '(ansi-color-process-output comint-postoutput-scroll-to-bottom))
     (setq ansi-color-for-comint-mode sbt:ansi-support)
+    (setq comint-input-sender 'sbt:input-sender)
     (set (make-local-variable 'sbt:previous-history-file) nil)
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
     (add-hook 'comint-output-filter-functions 'sbt:ansi-filter)
@@ -70,6 +71,13 @@ as the comint-input-ring on console start-up"
 (defconst sbt:ansi-clear-line "M\\[2K"
   "'Ansi code' sequence sent by JLine to clear the previous
 line.")
+
+(defun sbt:input-sender (proc string)
+  (sit-for 0) ; the purpose of this sit-for 0 is to let emacs show the
+	      ; newline that the user just inserted. Without this
+	      ; sometimes emacs will not give the user any feedback
+	      ; that the input has been sent.
+  (comint-simple-send proc string))
 
 (defun sbt:ansi-filter (input)
   (when (sbt:mode-p)
@@ -141,12 +149,12 @@ line.")
            (beginning-of-line) 
            (not (looking-at-p sbt:sbt-prompt-regexp)))
      (error "sbt is not ready (no prompt found)"))
+   (message "Querying sbt for completions for %s..." input)
    (when (or (null input) (string-match "^\\s *$" input))
      (setq input ""))
    (setq input (concat "completions \"" 
 		       (sbt:scala-escape-string input) 
 		       "\""))
-   (message "Querying sbt for completions...")
    (prog1 
        (comint-redirect-results-list input
                                      sbt:completions-regex
@@ -162,10 +170,10 @@ line.")
            (beginning-of-line) 
            (not (looking-at-p sbt:console-prompt-regexp)))
      (error "scala console is not ready (no prompt found)"))
+   (message "Querying scala console for completions for %s..." input)
    (setq input (replace-regexp-in-string "\\$1"
                                          (sbt:scala-escape-string input)
                                          sbt:repl-completions-string t t))
-   (message "Querying scala console for completions...")
    (prog1 
        (comint-redirect-results-list input
                                      sbt:completions-regex
@@ -191,10 +199,12 @@ line.")
              (goto-char point)
              (save-excursion
                (goto-char end)
+	       ;; find mid point (point respective to which the completions are given
                (unless (or (= (point) beg) (looking-back "[.,;]" (1- (point))))
                  (backward-sexp))
                (setq mid (max beg (point)))
-               (ignore-errors (backward-sexp (point-max)))
+	       ;; find beg point (point respective to which completions are requested
+               (ignore-errors (while (> (point) beg) (backward-sexp)))
                (setq beg (max beg (point))))
              (let ((completions (sbt:get-console-completions (buffer-substring beg end))))
                (completion-in-region mid end completions `(lambda (s) (> (string-width s) 0)))))
