@@ -181,6 +181,18 @@ A good alternative is **M-'**.
 (global-set-key (kbd "M-'") 'next-error)
 ```
 
+To alter the colors use by the sbt-mode, customize the following faces
+using the **M-x** *customize-face* command.
+
+- *sbt:warning*
+- *sbt:error*
+- *sbt:info*
+- *compilation-error*
+- *compilation-warning*
+
+Alternatively you may globally set their respective *-face* variables
+(e.g. *sbt:warning-face*) to point to your pre-defined face names.
+
 ## Commands and key-map
 
 As sbt-mode is based on comint-mode and compilation-mode, all the

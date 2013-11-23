@@ -28,6 +28,25 @@
   :type 'boolean
   :group 'sbt)
 
+(defface sbt:error
+  '((t :inherit error))
+  "Face for displaying some sbt error messages"
+  :group 'sbt)
+
+(defface sbt:info
+  '((t :inherit success))
+  "A face for displaying some sbt info messages"
+  :group 'sbt)
+
+(defface sbt:warning
+  '((t :inherit warning))
+  "A face for displaying some sbt warning messages"
+  :group 'sbt)
+
+(defvar sbt:error-face 'sbt:error)
+(defvar sbt:info-face 'sbt:info)
+(defvar sbt:warning-face 'sbt:warning)
+
 (defvar sbt:previous-command sbt:default-command)
 (make-variable-buffer-local 'sbt:previous-command)
 
@@ -171,10 +190,27 @@ buffer called *sbt*projectdir."
           3 4 nil (2 . nil) 3 )))
   (set (make-local-variable 'compilation-mode-font-lock-keywords)
         '(
-          ("^\\[error\\] Total time:[^\n]*"
-           (0 compilation-error-face))
-          ("^\\[success\\][^\n]*"
-           (0 compilation-info-face))))
+	  ("^\\[error\\] \\(x .*\\|Failed: Total .*\\)"
+	   (1 sbt:error-face))
+	  ("^\\[info\\] \\(Passed: Total [0-9]+, Failed 0, Errors 0, Passed [0-9]+\\)\\(\\(?:, Skipped [0-9]*\\)?\\)"
+	   (1 sbt:info-face)
+	   (2 sbt:warning-face))
+	  ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [1-9][0-9]*.*\\)"
+	   (1 sbt:error-face))
+	  ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [0-9]+, Errors [1-9][0-9]*.*\\)"
+	   (1 sbt:error-face))
+	  ("^\\[info\\] \\([0-9]+ examples?, 0 failure, 0 error\\)"
+	   (1 sbt:info-face))
+	  ("^\\[info\\] \\([0-9]+ examples?, [1-9][0-9]* failure, [0-9]+ error\\)"
+	   (1 sbt:error-face))
+	  ("^\\[info\\] \\([0-9]+ examples?, [0-9]* failure, [1-9][0-9]+ error\\)"
+	   (1 sbt:error-face))
+          ("^\\[\\(error\\)\\]"
+           (1 sbt:error-face))
+          ("^\\[\\(warn\\)\\]"
+           (1 sbt:warning-face))
+          ("^\\[\\(success\\)\\]"
+           (1 sbt:info-face))))
   (compilation-setup t))
 
 (defvar sbt:mode-map
