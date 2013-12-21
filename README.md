@@ -127,7 +127,10 @@ some sbt-mode variables (run **M-x** *customize-mode* **RET**
 To work efficiently with sbt-mode, you should customize these
 variables.
 
-- *sbt:program-name* - the name of the sbt executable, defaults to `sbt`
+- *sbt:program-name* - the name of the sbt executable, defaults to `sbt`. 
+    Note: this variable is best configured throught the emacs customization 
+    menu (`M-x customize-variable` RET `sbt:program-name`) or set globally. 
+    You can not set it with the mode hook.
 - *grep-find-ignored-directories* - directories not to include in searches.
     You should add the `target` directory and maybe remove many of the 
     directories related to arcane version control tools that you will not 
