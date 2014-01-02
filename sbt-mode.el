@@ -28,6 +28,11 @@
   :type 'boolean
   :group 'sbt)
 
+(defcustom sbt:clear-buffer-before-command t
+  "Whether to clear the sbt buffer before running a command."
+  :type 'boolean
+  :group 'sbt)
+
 (defface sbt:error
   '((t :inherit error))
   "Face for displaying some sbt error messages"
@@ -64,7 +69,7 @@
 ;;;###autoload
 (defun sbt-start () "Start sbt" (interactive) (sbt:run-sbt nil t))
 
-(defun sbt-clear () 
+(defun sbt-clear ()
   "Clear the current sbt buffer and send RET to sbt to re-display the prompt"
   (interactive) (sbt:clear))
 
@@ -81,11 +86,11 @@ This command does the following:
 
 The command is most usefull for running a compilation command
 that outputs errors."
-  (interactive 
+  (interactive
    (progn
-     (setq sbt:command-history-temp 
+     (setq sbt:command-history-temp
            (ignore-errors (with-current-buffer (sbt:buffer-name) (ring-elements comint-input-ring))))
-     
+
      (list (completing-read (format "Command to run (default %s): " (sbt:get-previous-command))
                             (completion-table-dynamic 'sbt:get-sbt-completions)
                             nil nil nil 'sbt:command-history-temp (sbt:get-previous-command)))))
@@ -125,13 +130,15 @@ region are not sent."
 
   (when (not (comint-check-proc (sbt:buffer-name)))
     (sbt:run-sbt))
-  
+
   (when sbt:save-some-buffers
     (save-some-buffers nil (sbt:buffer-in-project-function (sbt:find-root))))
 
+  (when sbt:clear-buffer-before-command
+    (sbt:clear (sbt:buffer-name)))
+
   (with-current-buffer (sbt:buffer-name)
     (display-buffer (current-buffer))
-    (sbt:clear (current-buffer))
     (comint-send-string (current-buffer) (concat command "\n"))
     (setq sbt:previous-command command)))
 
@@ -140,7 +147,7 @@ region are not sent."
       sbt:default-command
     (with-current-buffer (sbt:buffer-name)
       sbt:previous-command)))
-    
+
 (defun sbt:run-sbt (&optional kill-existing-p pop-p)
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
@@ -170,7 +177,7 @@ buffer called *sbt*projectdir."
         (message "Starting sbt in buffer %s " buffer-name)
         ;;(erase-buffer)
 
-        ;; insert a string to buffer so that process mark comes after 
+        ;; insert a string to buffer so that process mark comes after
         ;; compilation-messages-start mark.
         (insert (concat "Running " sbt:program-name "\n"))
         (goto-char (point-min))
@@ -179,7 +186,7 @@ buffer called *sbt*projectdir."
       (current-buffer))))
 
 (defun sbt:initialize-for-compilation-mode ()
-  (set (make-local-variable 'compilation-directory-matcher) 
+  (set (make-local-variable 'compilation-directory-matcher)
        '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
 
   (set (make-local-variable 'compilation-error-regexp-alist)
@@ -220,13 +227,13 @@ buffer called *sbt*projectdir."
                                              comint-mode-map))
     (define-key map (kbd "TAB") 'sbt-completion-at-point)
     (define-key map (kbd "C-c l") 'sbt-clear)
-    
+
     map)
   "Basic mode map for `sbt-start'")
 
 (define-derived-mode sbt-mode comint-mode "sbt"
   "Major mode for `sbt-start'.
- 
+
 \\{sbt:mode-map}"
   (use-local-map sbt:mode-map)
   (ignore-errors (scala-mode:set-scala-syntax-mode))
