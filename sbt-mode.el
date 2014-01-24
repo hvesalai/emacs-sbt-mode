@@ -185,7 +185,7 @@ buffer called *sbt*projectdir."
   (set (make-local-variable 'compilation-error-regexp-alist)
        `((,(rx line-start
                ?[ (or (group "error") (group "warn") ) ?]
-               " " (group (1+ (not (any ": "))))
+               " " (group (zero-or-one letter ":") (1+ (not (any ": "))))
                ?: (group (1+ digit)) ?:)
           3 4 nil (2 . nil) 3 )))
   (set (make-local-variable 'compilation-mode-font-lock-keywords)
