@@ -236,7 +236,11 @@ line.")
   (comint-send-string (sbt:buffer-name) "\n"))
 
 
-(defun sbt:paste-region (start end)
+(defun sbt:paste-region (start end &optional no-exit)
+  "Send region (from START to END) using :paste REPL command.
+
+If NO-EXIT is non-zero, this function will not end the paste
+mode."
   (unless (comint-check-proc (sbt:buffer-name))
     (error "sbt is not running in buffer %s" (sbt:buffer-name)))
   (save-excursion
@@ -258,6 +262,8 @@ line.")
       (comint-send-string (sbt:buffer-name) ":paste\n")))
 
   (comint-send-region (sbt:buffer-name) start end)
-  (comint-send-string (sbt:buffer-name) "\n\004"))
+  (comint-send-string (sbt:buffer-name) "\n")
+  (unless no-exit
+    (comint-send-string (sbt:buffer-name) "\004")))
 
 (provide 'sbt-mode-comint)

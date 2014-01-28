@@ -69,6 +69,19 @@
   (interactive) (sbt:clear))
 
 ;;;###autoload
+(defun run-scala ()
+  "Pop up Scala REPL buffer.
+
+If the sbt buffer is not in REPL mode, it will switch to REPL mode (console)."
+  (interactive)
+  (if (not (comint-check-proc (sbt:buffer-name)))
+      (sbt-command "console")
+    (with-current-buffer (sbt:buffer-name)
+      (when (eq sbt:submode 'sbt)
+        (sbt-command "console")))
+    (pop-to-buffer (sbt:buffer-name))))
+
+;;;###autoload
 (defun sbt-command (command)
   "Send a command to the sbt process of the current buffer's sbt project.
 Prompts for the command to send when in interactive mode. You can
@@ -111,13 +124,17 @@ region are not sent."
   (interactive "r")
   (sbt:send-region start end))
 
-(defun sbt-paste-region (start end)
+(defun sbt-paste-region (&optional no-exit)
   "Send the selected region (between the mark and the current
-point) to the sbt process of the current buffer's sbt
-project. Whitespace and comments at the beginning or end of the
-region are not sent."
-  (interactive "r")
-  (sbt:paste-region start end))
+point) to the sbt process of the current buffer's sbt project
+using :paste REPL command.  Whitespace and comments at the
+beginning or end of the region are not sent.  If the optional
+NO-EXIT is non-zero, it will not exit the :paste session, so that
+subsequent call to this function may provide additional input."
+  (interactive "P")
+  ;; TODO: Currently, NO-EXIT does not work correctly.
+  ;; (sbt:paste-region (region-beginning) (region-end) arg)
+  (sbt:paste-region (region-beginning) (region-end) nil))
 
 (defun sbt:clear (&optional buffer)
   "Clear (erase) the SBT buffer."

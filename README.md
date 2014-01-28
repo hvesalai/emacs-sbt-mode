@@ -283,6 +283,11 @@ the point (cursor) the other. Then run the **M-x** *sbt-send-region*
 command. The command will skip any whitespace or comments at the
 beginning and end of the region.
 
+You may prefer **M-x** *sbt-paste-region* to *sbt-send-region*.
+*sbt-paste-region* will enter `:paste` mode of Scala REPL, so that
+pasting multiline statement/expression will no longer confuse the
+REPL.
+
 ## Credits
 
 Mode development: Heikki Vesalainen
