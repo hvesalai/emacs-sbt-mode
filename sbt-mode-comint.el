@@ -232,8 +232,15 @@ line.")
                                      (get-buffer (sbt:buffer-name)))))
     (unless (or (eq submode 'console) (eq submode 'paste-mode))
       (sbt-command "console")))
-  (comint-send-region (sbt:buffer-name) start end)
-  (comint-send-string (sbt:buffer-name) "\n"))
+  ;; TODO: Do not send region if there is an error.
+  ;;
+  ;; There may be compilation by (sbt-command "console")
+  (let ((submode (buffer-local-value 'sbt:submode
+                                     (get-buffer (sbt:buffer-name)))))
+    (message "submode: %s" submode)
+    (when (or (eq submode 'console) (eq submode 'paste-mode))
+      (comint-send-region (sbt:buffer-name) start end)
+      (comint-send-string (sbt:buffer-name) "\n"))))
 
 
 (defun sbt:paste-region (start end &optional no-exit)
@@ -257,9 +264,9 @@ mode."
   (let ((submode (buffer-local-value 'sbt:submode
                                      (get-buffer (sbt:buffer-name)))))
     (when (eq submode 'sbt)
-      (sbt:command "console"))
-    (when (eq submode 'console)
-      (comint-send-string (sbt:buffer-name) ":paste\n")))
+      (sbt:command "console")))
+  ;; TODO: verify if we entered "console" mode successfully.
+  (comint-send-string (sbt:buffer-name) ":paste\n")
 
   (comint-send-region (sbt:buffer-name) start end)
   (comint-send-string (sbt:buffer-name) "\n")
