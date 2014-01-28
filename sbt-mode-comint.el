@@ -64,6 +64,7 @@ as the comint-input-ring on console start-up"
     (setq ansi-color-for-comint-mode sbt:ansi-support)
     (setq comint-input-sender 'sbt:input-sender)
     (set (make-local-variable 'sbt:previous-history-file) nil)
+    (set (make-local-variable 'sbt:submode) nil)
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
     (add-hook 'comint-output-filter-functions 'sbt:ansi-filter)
 ))
@@ -104,7 +105,8 @@ line.")
 		     ((looking-at sbt:console-prompt-regexp) 'console)
 		     ((looking-at sbt:paste-mode-prompt-regexp) 'paste-mode))))))
       (when submode
-	(setq comint-use-prompt-regexp (not (eq submode 'paste-mode)))
+        (setq sbt:submode submode)
+        (setq comint-use-prompt-regexp (not (eq submode 'paste-mode)))
 
 	(let ((comint-input-history-ignore "^completions\\|// completions$")
 	      (comint-input-ring-file-name
@@ -226,7 +228,36 @@ line.")
     (setq start (point)))
   (unless (> end start) (error "mark a region of code first"))
   (display-buffer (sbt:buffer-name))
+  (let ((submode (buffer-local-value 'sbt:submode
+                                     (get-buffer (sbt:buffer-name)))))
+    (unless (or (eq submode 'console) (eq submode 'paste-mode))
+      (sbt-command "console")))
   (comint-send-region (sbt:buffer-name) start end)
   (comint-send-string (sbt:buffer-name) "\n"))
+
+
+(defun sbt:paste-region (start end)
+  (unless (comint-check-proc (sbt:buffer-name))
+    (error "sbt is not running in buffer %s" (sbt:buffer-name)))
+  (save-excursion
+    (goto-char end)
+    (skip-syntax-forward ">")
+    (forward-comment (- (point-max)))
+    (setq end (point)))
+  (save-excursion
+    (goto-char start)
+    (forward-comment (point-max))
+    (setq start (point)))
+  (unless (> end start) (error "mark a region of code first"))
+  (display-buffer (sbt:buffer-name))
+  (let ((submode (buffer-local-value 'sbt:submode
+                                     (get-buffer (sbt:buffer-name)))))
+    (when (eq submode 'sbt)
+      (sbt:command "console"))
+    (when (eq submode 'console)
+      (comint-send-string (sbt:buffer-name) ":paste\n")))
+
+  (comint-send-region (sbt:buffer-name) start end)
+  (comint-send-string (sbt:buffer-name) "\n\004"))
 
 (provide 'sbt-mode-comint)

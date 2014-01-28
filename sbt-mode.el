@@ -111,6 +111,14 @@ region are not sent."
   (interactive "r")
   (sbt:send-region start end))
 
+(defun sbt-paste-region (start end)
+  "Send the selected region (between the mark and the current
+point) to the sbt process of the current buffer's sbt
+project. Whitespace and comments at the beginning or end of the
+region are not sent."
+  (interactive "r")
+  (sbt:paste-region start end))
+
 (defun sbt:clear (&optional buffer)
   "Clear (erase) the SBT buffer."
   (with-current-buffer (or buffer (sbt:buffer-name))
@@ -132,6 +140,10 @@ region are not sent."
   (with-current-buffer (sbt:buffer-name)
     (display-buffer (current-buffer))
     (sbt:clear (current-buffer))
+    (cond ((eq sbt:submode 'console)
+           (comint-send-string (current-buffer) ":quit\n"))
+          ((eq sbt:submode 'paste-mode)
+           (comint-send-string (current-buffer) "\004:quit\n")))
     (comint-send-string (current-buffer) (concat command "\n"))
     (setq sbt:previous-command command)))
 
