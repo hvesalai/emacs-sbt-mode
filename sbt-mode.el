@@ -118,7 +118,7 @@ region are not sent."
           (inhibit-read-only t))
       (ignore-errors (compilation-forget-errors))
       (erase-buffer)
-      (ignore-errors (comint-send-string proc (kbd "C-l"))))))
+      (ignore-errors (comint-send-string proc "\n")))))
 
 (defun sbt:command (command)
   (unless command (error "Please specify a command"))
