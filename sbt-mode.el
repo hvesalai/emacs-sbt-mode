@@ -28,6 +28,11 @@
   :type 'boolean
   :group 'sbt)
 
+(defcustom sbt:clear-buffer-before-command t
+  "Whether to clear the sbt buffer before running a command."
+  :type 'boolean
+  :group 'sbt)
+
 (defface sbt:error
   '((t :inherit error))
   "Face for displaying some sbt error messages"
@@ -154,15 +159,18 @@ subsequent call to this function may provide additional input."
   (when sbt:save-some-buffers
     (save-some-buffers nil (sbt:buffer-in-project-function (sbt:find-root))))
 
+  (when sbt:clear-buffer-before-command
+    (sbt:clear (sbt:buffer-name)))
+
   (with-current-buffer (sbt:buffer-name)
     (display-buffer (current-buffer))
-    (sbt:clear (current-buffer))
     (cond ((eq sbt:submode 'console)
            (comint-send-string (current-buffer) ":quit\n"))
           ((eq sbt:submode 'paste-mode)
            (comint-send-string (current-buffer)
                                (concat sbt:quit-paste-command
                                        ":quit\n"))))
+    (sbt:clear (current-buffer))
     (comint-send-string (current-buffer) (concat command "\n"))
     (setq sbt:previous-command command)))
 
@@ -216,7 +224,7 @@ buffer called *sbt*projectdir."
   (set (make-local-variable 'compilation-error-regexp-alist)
        `((,(rx line-start
                ?[ (or (group "error") (group "warn") ) ?]
-               " " (group (1+ (not (any ": "))))
+               " " (group (zero-or-one letter ":") (1+ (not (any ": "))))
                ?: (group (1+ digit)) ?:)
           3 4 nil (2 . nil) 3 )))
   (set (make-local-variable 'compilation-mode-font-lock-keywords)
