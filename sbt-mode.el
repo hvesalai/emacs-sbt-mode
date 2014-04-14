@@ -64,7 +64,7 @@
 ;;;###autoload
 (defun sbt-start () "Start sbt" (interactive) (sbt:run-sbt nil t))
 
-(defun sbt-clear () 
+(defun sbt-clear ()
   "Clear the current sbt buffer and send RET to sbt to re-display the prompt"
   (interactive) (sbt:clear))
 
@@ -94,11 +94,11 @@ This command does the following:
 
 The command is most usefull for running a compilation command
 that outputs errors."
-  (interactive 
+  (interactive
    (progn
-     (setq sbt:command-history-temp 
+     (setq sbt:command-history-temp
            (ignore-errors (with-current-buffer (sbt:buffer-name) (ring-elements comint-input-ring))))
-     
+
      (list (completing-read (format "Command to run (default %s): " (sbt:get-previous-command))
                             (completion-table-dynamic 'sbt:get-sbt-completions)
                             nil nil nil 'sbt:command-history-temp (sbt:get-previous-command)))))
@@ -150,7 +150,7 @@ subsequent call to this function may provide additional input."
 
   (when (not (comint-check-proc (sbt:buffer-name)))
     (sbt:run-sbt))
-  
+
   (when sbt:save-some-buffers
     (save-some-buffers nil (sbt:buffer-in-project-function (sbt:find-root))))
 
@@ -160,7 +160,9 @@ subsequent call to this function may provide additional input."
     (cond ((eq sbt:submode 'console)
            (comint-send-string (current-buffer) ":quit\n"))
           ((eq sbt:submode 'paste-mode)
-           (comint-send-string (current-buffer) "\004:quit\n")))
+           (comint-send-string (current-buffer)
+                               (concat sbt:quit-paste-command
+                                       ":quit\n"))))
     (comint-send-string (current-buffer) (concat command "\n"))
     (setq sbt:previous-command command)))
 
@@ -169,7 +171,7 @@ subsequent call to this function may provide additional input."
       sbt:default-command
     (with-current-buffer (sbt:buffer-name)
       sbt:previous-command)))
-    
+
 (defun sbt:run-sbt (&optional kill-existing-p pop-p)
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
@@ -199,7 +201,7 @@ buffer called *sbt*projectdir."
         (message "Starting sbt in buffer %s " buffer-name)
         ;;(erase-buffer)
 
-        ;; insert a string to buffer so that process mark comes after 
+        ;; insert a string to buffer so that process mark comes after
         ;; compilation-messages-start mark.
         (insert (concat "Running " sbt:program-name "\n"))
         (goto-char (point-min))
@@ -208,7 +210,7 @@ buffer called *sbt*projectdir."
       (current-buffer))))
 
 (defun sbt:initialize-for-compilation-mode ()
-  (set (make-local-variable 'compilation-directory-matcher) 
+  (set (make-local-variable 'compilation-directory-matcher)
        '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
 
   (set (make-local-variable 'compilation-error-regexp-alist)
@@ -219,21 +221,21 @@ buffer called *sbt*projectdir."
           3 4 nil (2 . nil) 3 )))
   (set (make-local-variable 'compilation-mode-font-lock-keywords)
         '(
-	  ("^\\[error\\] \\(x .*\\|Failed: Total .*\\)"
-	   (1 sbt:error-face))
-	  ("^\\[info\\] \\(Passed: Total [0-9]+, Failed 0, Errors 0, Passed [0-9]+\\)\\(\\(?:, Skipped [0-9]*\\)?\\)"
-	   (1 sbt:info-face)
-	   (2 sbt:warning-face))
-	  ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [1-9][0-9]*.*\\)"
-	   (1 sbt:error-face))
-	  ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [0-9]+, Errors [1-9][0-9]*.*\\)"
-	   (1 sbt:error-face))
-	  ("^\\[info\\] \\([0-9]+ examples?, 0 failure, 0 error\\)"
-	   (1 sbt:info-face))
-	  ("^\\[info\\] \\([0-9]+ examples?, [1-9][0-9]* failure, [0-9]+ error\\)"
-	   (1 sbt:error-face))
-	  ("^\\[info\\] \\([0-9]+ examples?, [0-9]* failure, [1-9][0-9]+ error\\)"
-	   (1 sbt:error-face))
+          ("^\\[error\\] \\(x .*\\|Failed: Total .*\\)"
+           (1 sbt:error-face))
+          ("^\\[info\\] \\(Passed: Total [0-9]+, Failed 0, Errors 0, Passed [0-9]+\\)\\(\\(?:, Skipped [0-9]*\\)?\\)"
+           (1 sbt:info-face)
+           (2 sbt:warning-face))
+          ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [1-9][0-9]*.*\\)"
+           (1 sbt:error-face))
+          ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [0-9]+, Errors [1-9][0-9]*.*\\)"
+           (1 sbt:error-face))
+          ("^\\[info\\] \\([0-9]+ examples?, 0 failure, 0 error\\)"
+           (1 sbt:info-face))
+          ("^\\[info\\] \\([0-9]+ examples?, [1-9][0-9]* failure, [0-9]+ error\\)"
+           (1 sbt:error-face))
+          ("^\\[info\\] \\([0-9]+ examples?, [0-9]* failure, [1-9][0-9]+ error\\)"
+           (1 sbt:error-face))
           ("^\\[\\(error\\)\\]"
            (1 sbt:error-face))
           ("^\\[\\(warn\\)\\]"
@@ -249,13 +251,13 @@ buffer called *sbt*projectdir."
                                              comint-mode-map))
     (define-key map (kbd "TAB") 'sbt-completion-at-point)
     (define-key map (kbd "C-c l") 'sbt-clear)
-    
+
     map)
   "Basic mode map for `sbt-start'")
 
 (define-derived-mode sbt-mode comint-mode "sbt"
   "Major mode for `sbt-start'.
- 
+
 \\{sbt:mode-map}"
   (use-local-map sbt:mode-map)
   (ignore-errors (scala-mode:set-scala-syntax-mode))
