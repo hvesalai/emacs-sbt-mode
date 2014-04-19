@@ -86,7 +86,7 @@ to the load-path and then to require it. For more information regarding
         updating from within Emacs itself. Adding the MELPA
         repository to your emacs initialization will be required to locate
         the packages.
-       
+
         Add the following to your emacs config (.emacs, init.el, etc).
         If such a definition already exists, ensure that it contains
         the MELPA declaration.
@@ -127,13 +127,13 @@ some sbt-mode variables (run **M-x** *customize-mode* **RET**
 To work efficiently with sbt-mode, you should customize these
 variables.
 
-- *sbt:program-name* - the name of the sbt executable, defaults to `sbt`. 
-    Note: this variable is best configured throught the emacs customization 
-    menu (`M-x customize-variable` RET `sbt:program-name`) or set globally. 
+- *sbt:program-name* - the name of the sbt executable, defaults to `sbt`.
+    Note: this variable is best configured throught the emacs customization
+    menu (`M-x customize-variable` RET `sbt:program-name`) or set globally.
     You can not set it with the mode hook.
 - *grep-find-ignored-directories* - directories not to include in searches.
-    You should add the `target` directory and maybe remove many of the 
-    directories related to arcane version control tools that you will not 
+    You should add the `target` directory and maybe remove many of the
+    directories related to arcane version control tools that you will not
     have anyway.
 - *grep-find-ignored-files* - a list of file patterns to ignore in searches.
 
@@ -154,7 +154,7 @@ key-bindings and some settings.
   ;; Bind M-RET to 'comint-accumulate. This will allow you to add
   ;; more than one line to scala console prompt before sending it
   ;; for interpretation. It will keep your command history cleaner.
-  (local-set-key (kbd "M-RET") 'comint-accumulate) 
+  (local-set-key (kbd "M-RET") 'comint-accumulate)
 ))
 ```
 
@@ -177,7 +177,7 @@ easily accessible key position.
 
 Also check that your global binding for the *next-error* function is
 satisfactory. It is by default bound to **M-\`** which might be hard to
-access on some keyboard layouts where **`** is a dead key. 
+access on some keyboard layouts where **`** is a dead key.
 A good alternative is **M-'**.
 
 ```lisp
@@ -204,7 +204,7 @@ commands of those modes are available.
 To see what commands sbt-mode adds, just type
 **C-h f** *sbt-* **TAB** and choose a command to get its description.
 
-To see the default key-map, see the help page for the sbt-mode: 
+To see the default key-map, see the help page for the sbt-mode:
 **C-h f** *sbt-mode*.
 
 ## Tasks
@@ -228,7 +228,7 @@ After starting the sbt shell as described above, use the following
 commands in emacs.
 
 - **M-x** *sbt-command*
-- **M-x** *sbt-run-previous-command* commands. 
+- **M-x** *sbt-run-previous-command*
 
 The difference in using these compared to typing the command directly
 to the sbt buffer, is that using these commands can be run from any
@@ -236,6 +236,11 @@ buffer with a file from the sbt project directory tree and that these
 commands will reset the sbt buffer, making it easier to read the
 compiler output and to navigate to any errors. Having
 *sbt-run-previous-command* bound to some key-mapping is advisable.
+
+After using either of these commands, if any buffers need saving, Emacs
+will ask if you'd like to save them. You can set
+`compilation-ask-about-save` to `nil` to skip the question and have
+buffers saved automatically instead.
 
 After running the compilation, you can navigate to the errors by
 selecting the error line and pressing **RET** or using mouse. You may
@@ -254,7 +259,7 @@ mimics rgrep, so see **C-h f** *rgrep* for help.
 
 Besides *sbt-grep* you have also two other commands available for
 finding things at point using grep. These commands work more reliably
-if you have [scala-mode2](https://github.com/hvesalai/scala-mode2) 
+if you have [scala-mode2](https://github.com/hvesalai/scala-mode2)
 installed.
 
 - **M-x** *sbt-find-definitions* will search for the definition of the
@@ -292,5 +297,5 @@ REPL.
 
 Mode development: Heikki Vesalainen
 
-While a complete rewrite, the mode was inspired by the 
+While a complete rewrite, the mode was inspired by the
 sbt-support provided by the old scala-mode.
