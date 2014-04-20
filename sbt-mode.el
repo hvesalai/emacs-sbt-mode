@@ -157,7 +157,9 @@ subsequent call to this function may provide additional input."
     (sbt:run-sbt))
 
   (when sbt:save-some-buffers
-    (save-some-buffers nil (sbt:buffer-in-project-function (sbt:find-root))))
+    (save-some-buffers
+     (not compilation-ask-about-save)
+     (sbt:buffer-in-project-function (sbt:find-root))))
 
   (when sbt:clear-buffer-before-command
     (sbt:clear (sbt:buffer-name)))
