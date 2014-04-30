@@ -9,7 +9,9 @@
 (require 'sbt-mode-buffer)
 
 (eval-when-compile
-  (defvar sbt:previous-history-file))
+  (defvar sbt:previous-history-file)
+  (defvar sbt:submode)
+  (defun sbt-command (c)))
 
 (defcustom sbt:sbt-history-file "target/.history"
   "The .history file written by sbt. Relative to the sbt project
@@ -269,7 +271,7 @@ mode."
   (let ((submode (buffer-local-value 'sbt:submode
                                      (get-buffer (sbt:buffer-name)))))
     (when (eq submode 'sbt)
-      (sbt:command "console")))
+      (sbt-command "console")))
   ;; TODO: verify if we entered "console" mode successfully.
   (comint-send-string (sbt:buffer-name) ":paste\n")
 

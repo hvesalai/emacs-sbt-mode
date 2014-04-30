@@ -11,6 +11,7 @@
 (require 'sbt-mode-rgrep)
 
 (eval-when-compile
+  (defvar sbt:submode)
   (defun scala-mode:set-scala-syntax-mode ()))
 
 (defcustom sbt:program-name "sbt"
