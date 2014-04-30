@@ -162,9 +162,6 @@ subsequent call to this function may provide additional input."
      (not compilation-ask-about-save)
      (sbt:buffer-in-project-function (sbt:find-root))))
 
-  (when sbt:clear-buffer-before-command
-    (sbt:clear (sbt:buffer-name)))
-
   (with-current-buffer (sbt:buffer-name)
     (display-buffer (current-buffer))
     (cond ((eq sbt:submode 'console)
@@ -173,7 +170,9 @@ subsequent call to this function may provide additional input."
            (comint-send-string (current-buffer)
                                (concat sbt:quit-paste-command
                                        ":quit\n"))))
-    (sbt:clear (current-buffer))
+    (if sbt:clear-buffer-before-command
+        (sbt:clear (current-buffer))
+      (ignore-errors (compilation-forget-errors)))
     (comint-send-string (current-buffer) (concat command "\n"))
     (setq sbt:previous-command command)))
 
@@ -228,6 +227,7 @@ buffer called *sbt*projectdir."
        `((,(rx line-start
                ?[ (or (group "error") (group "warn") ) ?]
                " " (group (zero-or-one letter ":") (1+ (not (any ": "))))
+
                ?: (group (1+ digit)) ?:)
           3 4 nil (2 . nil) 3 )))
   (set (make-local-variable 'compilation-mode-font-lock-keywords)
