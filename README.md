@@ -24,56 +24,11 @@ installed. The mode has been developed on 24.2.
     the latest version of
     [scala-mode2](https://github.com/hvesalai/scala-mode2).
 
-2. To use tab-completion, your sbt version must support the
-`completions` command. The command will be available in sbt 0.13.2,
-but for earlier versions you need to use a plugin.
+2. Tab-completion is available natively for sbt 0.13.2. For older
+versions of sbt, install the [completions](completions.md) plugin
+separately.
 
-    Add the CompletionPlugin to your sbt environment as a global
-    plugin available to all projects. The directory depends on the sbt
-    version:
-
-    - sbt 0.12: `~/.sbt/plugins/`
-    - sbt 0.13.1: `~/.sbt/0.13/plugins/`
-
-    You need these two files in the plugins directory:
-
-    `CompletionsPlugin.scala`:
-
-    ```scala
-    import sbt._
-    import Keys._
-    import sbt.complete._
-    import Parsers._
-
-    object CompletionsPlugin extends Plugin {
-      override lazy val settings = Seq(commands += completions)
-
-      lazy val completions = Command.make("completions") { state =>
-        val notQuoted = (NotQuoted ~ Parsers.any.*) map {case (nq, s) => (nq +: s).mkString}
-        val quotedOrUnquotedSingleArgument = Space ~> (StringVerbatim | StringEscapable | notQuoted)
-
-        Parser.token(quotedOrUnquotedSingleArgument ?? "" examples("", " ")) map { input =>
-          () => {
-            Parser.completions(state.combinedParser, input, 1).get map {
-              c => if (c.isEmpty) input else input + c.append
-            } foreach { c =>
-              println("[completions] " + c.replaceAll("\n", " "))
-            }
-            state
-          }
-        }
-      }
-    }
-    ```
-
-    `build.sbt`:
-
-
-    ```
-    sbtPlugin := true
-    ```
-
-2. There are two mechanisms that can be used for the installation of
+3. There are two mechanisms that can be used for the installation of
 the mode into Emacs. The preferred manner is to use the built-in
 package manager of Emacs 24 (i.e. `package.el`) and
 the other is to manually clone the git repository, add the path to the mode
@@ -115,7 +70,7 @@ to the load-path and then to require it. For more information regarding
         (require 'sbt-mode)
         ```
 
-3. That's it. Next you can start emacs in your project directory and
+4. That's it. Next you can start emacs in your project directory and
 run sbt-start (use **M-x** *start-sbt*). You might also want to change
 some keybindings to make better use of sbt-mode. If you have
 customized your sbt project layout, you might also need to customize
