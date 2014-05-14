@@ -53,8 +53,7 @@
 (defvar sbt:info-face 'sbt:info)
 (defvar sbt:warning-face 'sbt:warning)
 
-(defvar sbt:previous-command sbt:default-command)
-(make-variable-buffer-local 'sbt:previous-command)
+(defvar-local sbt:previous-command sbt:default-command)
 
 (defvar sbt:command-history-temp nil)
 
@@ -220,39 +219,41 @@ buffer called *sbt*projectdir."
       (current-buffer))))
 
 (defun sbt:initialize-for-compilation-mode ()
-  (set (make-local-variable 'compilation-directory-matcher)
-       '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
-
-  (set (make-local-variable 'compilation-error-regexp-alist)
-       `((,(rx line-start
-               ?[ (or (group "error") (group "warn") ) ?]
-               " " (group (zero-or-one letter ":") (1+ (not (any ": "))))
-
-               ?: (group (1+ digit)) ?:)
-          3 4 nil (2 . nil) 3 )))
-  (set (make-local-variable 'compilation-mode-font-lock-keywords)
-        '(
-          ("^\\[error\\] \\(x .*\\|Failed: Total .*\\)"
-           (1 sbt:error-face))
-          ("^\\[info\\] \\(Passed: Total [0-9]+, Failed 0, Errors 0, Passed [0-9]+\\)\\(\\(?:, Skipped [0-9]*\\)?\\)"
-           (1 sbt:info-face)
-           (2 sbt:warning-face))
-          ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [1-9][0-9]*.*\\)"
-           (1 sbt:error-face))
-          ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [0-9]+, Errors [1-9][0-9]*.*\\)"
-           (1 sbt:error-face))
-          ("^\\[info\\] \\([0-9]+ examples?, 0 failure, 0 error\\)"
-           (1 sbt:info-face))
-          ("^\\[info\\] \\([0-9]+ examples?, [1-9][0-9]* failure, [0-9]+ error\\)"
-           (1 sbt:error-face))
-          ("^\\[info\\] \\([0-9]+ examples?, [0-9]* failure, [1-9][0-9]+ error\\)"
-           (1 sbt:error-face))
-          ("^\\[\\(error\\)\\]"
-           (1 sbt:error-face))
-          ("^\\[\\(warn\\)\\]"
-           (1 sbt:warning-face))
-          ("^\\[\\(success\\)\\]"
-           (1 sbt:info-face))))
+  (setq-local 
+   compilation-directory-matcher
+   '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
+  (setq-local 
+   compilation-error-regexp-alist
+   `((,(rx line-start
+           ?[ (or (group "error") (group "warn") ) ?]
+           " " (group (zero-or-one letter ":") (1+ (not (any ": "))))
+           
+           ?: (group (1+ digit)) ?:)
+      3 4 nil (2 . nil) 3 )))
+  (setq-local 
+   compilation-mode-font-lock-keywords
+   '(
+     ("^\\[error\\] \\(x .*\\|Failed: Total .*\\)"
+      (1 sbt:error-face))
+     ("^\\[info\\] \\(Passed: Total [0-9]+, Failed 0, Errors 0, Passed [0-9]+\\)\\(\\(?:, Skipped [0-9]*\\)?\\)"
+      (1 sbt:info-face)
+      (2 sbt:warning-face))
+     ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [1-9][0-9]*.*\\)"
+      (1 sbt:error-face))
+     ("^\\[info\\] \\(Passed: Total [0-9]+, Failed [0-9]+, Errors [1-9][0-9]*.*\\)"
+      (1 sbt:error-face))
+     ("^\\[info\\] \\([0-9]+ examples?, 0 failure, 0 error\\)"
+      (1 sbt:info-face))
+     ("^\\[info\\] \\([0-9]+ examples?, [1-9][0-9]* failure, [0-9]+ error\\)"
+      (1 sbt:error-face))
+     ("^\\[info\\] \\([0-9]+ examples?, [0-9]* failure, [1-9][0-9]+ error\\)"
+      (1 sbt:error-face))
+     ("^\\[\\(error\\)\\]"
+      (1 sbt:error-face))
+     ("^\\[\\(warn\\)\\]"
+      (1 sbt:warning-face))
+     ("^\\[\\(success\\)\\]"
+      (1 sbt:info-face))))
   (compilation-setup t))
 
 (defvar sbt:mode-map

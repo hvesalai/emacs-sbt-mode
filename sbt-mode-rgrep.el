@@ -81,7 +81,7 @@
     (rgrep (concat "\\(class\\|type\\|trait\\|object\\|va[rl]\\|def\\|package\\)[ \\t]\\+" (sbt:regexp-for-id id)) "*.scala *.java" (sbt:find-root) confirm)))
 
 (defun sbt:grep-setup-function ()
-  (set (make-local-variable 'compilation-auto-jump-to-first-error) t)
-  (set (make-local-variable 'compilation-auto-jump-to-next) t))
+  (setq-local compilation-auto-jump-to-first-error t)
+  (setq-local compilation-auto-jump-to-next t))
 
 (provide 'sbt-mode-rgrep)

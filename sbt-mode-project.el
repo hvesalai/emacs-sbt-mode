@@ -39,7 +39,7 @@ fails to find the sbt root."
                       (and (file-exists-p (concat dir "project"))
                            (directory-files (concat dir "project") nil ".+\\.scala$"))))))))
         (when root 
-          (set (make-local-variable 'sbt:buffer-project-root) root)))))
+          (setq-local sbt:buffer-project-root root)))))
 
 (defun sbt:buffer-in-project-function (root)
   "Return a lambda that returns 't if the current buffer is in the ROOT project."
