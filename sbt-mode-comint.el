@@ -67,7 +67,7 @@ as the comint-input-ring on console start-up"
     (setq-local comint-use-prompt-regexp t)
     (setq-local comint-prompt-read-only t)
     (setq-local comint-buffer-maximum-size 4096)
-    (setq comint-output-filter-functions '(ansi-color-process-output comint-postoutput-scroll-to-bottom))
+    (setq-local comint-output-filter-functions '(ansi-color-process-output comint-postoutput-scroll-to-bottom))
     (setq ansi-color-for-comint-mode sbt:ansi-support)
     (setq comint-input-sender 'sbt:input-sender)
     (setq-local sbt:previous-history-file nil)
