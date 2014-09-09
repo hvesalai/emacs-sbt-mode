@@ -71,7 +71,7 @@ to the load-path and then to require it. For more information regarding
         ```
 
 4. That's it. Next you can start emacs in your project directory and
-run sbt-start (use **M-x** *start-sbt*). You might also want to change
+run sbt-start (use **M-x** *sbt-start*). You might also want to change
 some keybindings to make better use of sbt-mode. If you have
 customized your sbt project layout, you might also need to customize
 some sbt-mode variables (run **M-x** *customize-mode* **RET**
