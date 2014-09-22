@@ -67,7 +67,10 @@
 ;;;
 
 ;;;###autoload
-(defun sbt-start () "Start sbt" (interactive) (sbt:run-sbt nil t))
+(defun sbt-start (&optional session)
+  "Start sbt"
+  (interactive (list (read-from-minibuffer "Session name: ")))
+  (sbt:run-sbt nil t session))
 
 (defun sbt-clear ()
   "Clear the current sbt buffer and send RET to sbt to re-display the prompt"
@@ -181,13 +184,14 @@ subsequent call to this function may provide additional input."
     (with-current-buffer (sbt:buffer-name)
       sbt:previous-command)))
 
-(defun sbt:run-sbt (&optional kill-existing-p pop-p)
+(defun sbt:run-sbt (&optional kill-existing-p pop-p session) 
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
   (let* ((project-root (sbt:find-root))
          (sbt-command-line (split-string sbt:program-name " "))
-         (buffer-name (sbt:buffer-name))
+         (buffer-name (concat (sbt:buffer-name) session))
          (inhibit-read-only 1))
+    (print `(:buffer-name ,buffer-name))
     (when (null project-root)
       (error "Could not find project root, type `C-h f sbt:find-root` for help."))
 
@@ -217,6 +221,8 @@ buffer called *sbt*projectdir."
         (ignore-errors (compilation-forget-errors))
         (comint-exec (current-buffer) buffer-name (nth 0 sbt-command-line) nil (cdr sbt-command-line)))
       (current-buffer))))
+
+
 
 (defun sbt:initialize-for-compilation-mode ()
   (setq-local 
