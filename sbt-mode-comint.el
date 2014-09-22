@@ -221,6 +221,19 @@ line.")
              (goto-char point)
              "No sbt or scala prompt found before process mark")))))
 
+(defmacro sbt:in-scala-console (&rest body)
+  `(progn
+     (let ((submode (buffer-local-value 'sbt:submode
+                                        (get-buffer (sbt:buffer-name)))))
+       (message "submode %s" submode)
+       (unless (and (comint-check-proc (sbt:buffer-name))
+                    (or  (eq submode 'console)
+                         (eq submode 'paste-mode)))
+         (error "sbt console is not running in buffer %s" (sbt:buffer-name))))
+     (display-buffer (sbt:buffer-name))
+     ,@body
+     (comint-send-string (sbt:buffer-name) "\n")))
+
 (defun sbt:send-region (start end)
   (let ((submode (buffer-local-value 'sbt:submode
                                      (get-buffer (sbt:buffer-name)))))
@@ -239,9 +252,13 @@ line.")
     (forward-comment (point-max))
     (setq start (point)))
   (unless (> end start) (error "mark a region of code first"))
-  (display-buffer (sbt:buffer-name))
-  (comint-send-region (sbt:buffer-name) start end)
-  (comint-send-string (sbt:buffer-name) "\n"))
+  (sbt:in-scala-console
+   (comint-send-region (sbt:buffer-name) start end)))
+
+(defun sbt:send-string (s)
+  (unless (string= "\n" s)
+    (sbt:in-scala-console
+     (comint-send-string (sbt:buffer-name) s))))
 
 
 (defun sbt:paste-region (start end &optional no-exit)
