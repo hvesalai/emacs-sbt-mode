@@ -222,8 +222,6 @@ buffer called *sbt*projectdir."
         (comint-exec (current-buffer) buffer-name (nth 0 sbt-command-line) nil (cdr sbt-command-line)))
       (current-buffer))))
 
-
-
 (defun sbt:initialize-for-compilation-mode ()
   (setq-local 
    compilation-directory-matcher
