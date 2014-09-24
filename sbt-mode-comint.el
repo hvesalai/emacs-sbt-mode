@@ -230,14 +230,14 @@ line.")
               (eq submode 'paste-mode)))))
 
 (defun sbt:send-string (s)
-  (unless (console-ready-p (sbt:buffer-name))
+  (unless (sbt:console-ready-p (sbt:buffer-name))
     (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
   (unless (string= "\n" s)
     (comint-send-string (sbt:buffer-name) s)
     (comint-send-string (sbt:buffer-name) "\n")))
 
 (defun sbt:send-region (start end)
-  (unless (console-ready-p (sbt:buffer-name))
+  (unless (sbt:console-ready-p (sbt:buffer-name))
     (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
   (save-excursion
     (goto-char end)
@@ -258,7 +258,7 @@ line.")
 
 If NO-EXIT is non-zero, this function will not end the paste
 mode."
-  (unless (console-ready-p (sbt:buffer-name))
+  (unless (sbt:console-ready-p (sbt:buffer-name))
     (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
   (save-excursion
     (goto-char end)
