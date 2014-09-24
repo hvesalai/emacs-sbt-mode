@@ -1,3 +1,4 @@
+
 ;;; scala-mode.el - Functions for discovering the current sbt project
 ;;
 ;; Copyright(c) 2013 Heikki Vesalainen
@@ -157,18 +158,16 @@ subsequent call to this function may provide additional input."
       (erase-buffer)
       (ignore-errors (comint-send-string proc (kbd "C-l"))))))
 
-(defun sbt:command (command)
+(defun sbt:command (command &optional session)
   (unless command (error "Please specify a command"))
-
-  (when (not (comint-check-proc (sbt:buffer-name)))
-    (sbt:run-sbt))
-
+  (when (not (comint-check-proc (sbt:buffer-name session)))
+    (sbt:run-sbt nil nil nil session))
   (when sbt:save-some-buffers
     (save-some-buffers
      (not compilation-ask-about-save)
      (sbt:buffer-in-project-function (sbt:find-root))))
 
-  (with-current-buffer (sbt:buffer-name)
+  (with-current-buffer (sbt:buffer-name session)
     (display-buffer (current-buffer))
     (cond ((eq sbt:submode 'console)
            (comint-send-string (current-buffer) ":quit\n"))
@@ -182,18 +181,18 @@ subsequent call to this function may provide additional input."
     (comint-send-string (current-buffer) (concat command "\n"))
     (setq sbt:previous-command command)))
 
-(defun sbt:get-previous-command ()
-  (if (not (get-buffer (sbt:buffer-name)))
+(defun sbt:get-previous-command (&optional session)
+  (if (not (get-buffer (sbt:buffer-name session)))
       sbt:default-command
-    (with-current-buffer (sbt:buffer-name)
+    (with-current-buffer (sbt:buffer-name session)
       sbt:previous-command)))
 
-(defun sbt:run-sbt (&optional kill-existing-p pop-p)
+(defun sbt:run-sbt (&optional kill-existing-p pop-p  session)
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
   (let* ((project-root (sbt:find-root))
          (sbt-command-line (split-string sbt:program-name " "))
-         (buffer-name (sbt:buffer-name))
+         (buffer-name (sbt:buffer-name session))
          (inhibit-read-only 1))
     (when (null project-root)
       (error "Could not find project root, type `C-h f sbt:find-root` for help."))

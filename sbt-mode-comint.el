@@ -229,52 +229,55 @@ line.")
          (or  (eq submode 'console)
               (eq submode 'paste-mode)))))
 
-(defun sbt:send-string (s)
-  (unless (sbt:console-ready-p (sbt:buffer-name))
-    (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
-  (unless (string= "\n" s)
-    (comint-send-string (sbt:buffer-name) s)
-    (comint-send-string (sbt:buffer-name) "\n")))
+(defun sbt:send-string (s &optional session)
+  (let ((buffer-name (sbt:buffer-name session)))
+    (unless (sbt:console-ready-p buffer-name)
+      (error "sbt console is not running in buffer %s" buffer-name))
+    (unless (string= "\n" s)
+      (comint-send-string buffer-name s)
+      (comint-send-string buffer-name "\n"))))
 
-(defun sbt:send-region (start end)
-  (unless (sbt:console-ready-p (sbt:buffer-name))
-    (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
-  (save-excursion
-    (goto-char end)
-    (skip-syntax-forward ">")
-    (forward-comment (- (point-max)))
-    (setq end (point)))
-  (save-excursion
-    (goto-char start)
-    (forward-comment (point-max))
-    (setq start (point)))
-  (display-buffer (sbt:buffer-name))
-  (comint-send-region (sbt:buffer-name) start end)
-  (comint-send-string (sbt:buffer-name) "\n"))
+(defun sbt:send-region (start end &optional session)
+  (let ((buffer-name (sbt:buffer-name session)))
+    (unless (sbt:console-ready-p buffer-name)
+        (error "sbt console is not running in buffer %s" buffer-name))
+    (save-excursion
+      (goto-char end)
+      (skip-syntax-forward ">")
+      (forward-comment (- (point-max)))
+      (setq end (point)))
+    (save-excursion
+      (goto-char start)
+      (forward-comment (point-max))
+      (setq start (point)))
+    (display-buffer buffer-name)
+    (comint-send-region buffer-name start end)
+    (comint-send-string buffer-name "\n")))
 
 
-(defun sbt:paste-region (start end &optional no-exit)
+(defun sbt:paste-region (start end &optional no-exit session)
   "Send region (from START to END) using :paste REPL command.
 
 If NO-EXIT is non-zero, this function will not end the paste
 mode."
-  (unless (sbt:console-ready-p (sbt:buffer-name))
-    (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
-  (save-excursion
-    (goto-char end)
-    (skip-syntax-forward ">")
-    (forward-comment (- (point-max)))
-    (setq end (point)))
-  (save-excursion
-    (goto-char start)
-    (forward-comment (point-max))
-    (setq start (point)))
-  (unless (> end start) (error "mark a region of code first"))
-  (display-buffer (sbt:buffer-name))
-  (comint-send-string (sbt:buffer-name) ":paste\n")
-  (comint-send-region (sbt:buffer-name) start end)
-  (comint-send-string (sbt:buffer-name) "\n")
-  (unless no-exit
-    (comint-send-string (sbt:buffer-name) sbt:quit-paste-command)))
+  (let ((buffer-name (sbt:buffer-name session))) 
+    (unless (sbt:console-ready-p buffer-name)
+      (error "sbt console is not running in buffer %s" buffer-name))
+    (save-excursion
+      (goto-char end)
+      (skip-syntax-forward ">")
+      (forward-comment (- (point-max)))
+      (setq end (point)))
+    (save-excursion
+      (goto-char start)
+      (forward-comment (point-max))
+      (setq start (point)))
+    (unless (> end start) (error "mark a region of code first"))
+    (display-buffer buffer-name)
+    (comint-send-string buffer-name ":paste\n")
+    (comint-send-region buffer-name start end)
+    (comint-send-string buffer-name "\n")
+    (unless no-exit
+      (comint-send-string buffer-name sbt:quit-paste-command)))
 
-(provide 'sbt-mode-comint)
+  (provide 'sbt-mode-comint))
