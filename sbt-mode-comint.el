@@ -222,12 +222,11 @@ line.")
              "No sbt or scala prompt found before process mark")))))
 
 (defun sbt:console-ready-p (buffer-name)
-  (let ((submode (buffer-local-value 'sbt:submode
-                                     (get-buffer buffer-name))))
-    (message "submode %s" submode)
-    (and (comint-check-proc buffer-name)
-         (or  (eq submode 'console)
-              (eq submode 'paste-mode)))))
+  (when (comint-check-proc buffer-name)
+    (let ((submode (buffer-local-value 'sbt:submode (get-buffer buffer-name))))
+      (message "submode %s" submode)
+      (or  (eq submode 'console)
+           (eq submode 'paste-mode)))))
 
 (defun sbt:send-string (s)
   (unless (sbt:console-ready-p (sbt:buffer-name))
