@@ -221,21 +221,24 @@ line.")
              (goto-char point)
              "No sbt or scala prompt found before process mark")))))
 
-(defun sbt:send-string (s)
+(defun sbt:console-ready-p (buffer-name)
   (let ((submode (buffer-local-value 'sbt:submode
                                      (get-buffer buffer-name))))
     (message "submode %s" submode)
-    (unless (and (comint-check-proc buffer-name)
-                 (or  (eq submode 'console)
-                      (eq submode 'paste-mode)))
-      (error "sbt console is not running in buffer %s" (sbt:buffer-name))))
+    (and (comint-check-proc buffer-name)
+         (or  (eq submode 'console)
+              (eq submode 'paste-mode)))))
+
+(defun sbt:send-string (s)
+  (unless (console-ready-p (sbt:buffer-name))
+    (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
   (unless (string= "\n" s)
     (comint-send-string (sbt:buffer-name) s)
     (comint-send-string (sbt:buffer-name) "\n")))
 
 (defun sbt:send-region (start end)
-  (unless (comint-check-proc (sbt:buffer-name))
-    (error "sbt is not running in buffer %s" (sbt:buffer-name)))
+  (unless (console-ready-p (sbt:buffer-name))
+    (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
   (save-excursion
     (goto-char end)
     (skip-syntax-forward ">")
@@ -245,21 +248,9 @@ line.")
     (goto-char start)
     (forward-comment (point-max))
     (setq start (point)))
-  (unless (> end start) (error "mark a region of code first"))
   (display-buffer (sbt:buffer-name))
-  (let ((submode (buffer-local-value 'sbt:submode
-                                     (get-buffer (sbt:buffer-name)))))
-    (unless (or (eq submode 'console) (eq submode 'paste-mode))
-      (sbt-command "console")))
-  ;; TODO: Do not send region if there is an error.
-  ;;
-  ;; There may be compilation by (sbt-command "console")
-  (let ((submode (buffer-local-value 'sbt:submode
-                                     (get-buffer (sbt:buffer-name)))))
-    (message "submode: %s" submode)
-    (when (or (eq submode 'console) (eq submode 'paste-mode))
-      (comint-send-region (sbt:buffer-name) start end)
-      (comint-send-string (sbt:buffer-name) "\n"))))
+  (comint-send-region (sbt:buffer-name) start end)
+  (comint-send-string (sbt:buffer-name) "\n"))
 
 
 (defun sbt:paste-region (start end &optional no-exit)
@@ -267,8 +258,8 @@ line.")
 
 If NO-EXIT is non-zero, this function will not end the paste
 mode."
-  (unless (comint-check-proc (sbt:buffer-name))
-    (error "sbt is not running in buffer %s" (sbt:buffer-name)))
+  (unless (console-ready-p (sbt:buffer-name))
+    (error "sbt console is not running in buffer %s" (sbt:buffer-name)))
   (save-excursion
     (goto-char end)
     (skip-syntax-forward ">")
@@ -280,13 +271,7 @@ mode."
     (setq start (point)))
   (unless (> end start) (error "mark a region of code first"))
   (display-buffer (sbt:buffer-name))
-  (let ((submode (buffer-local-value 'sbt:submode
-                                     (get-buffer (sbt:buffer-name)))))
-    (when (eq submode 'sbt)
-      (sbt-command "console")))
-  ;; TODO: verify if we entered "console" mode successfully.
   (comint-send-string (sbt:buffer-name) ":paste\n")
-
   (comint-send-region (sbt:buffer-name) start end)
   (comint-send-string (sbt:buffer-name) "\n")
   (unless no-exit
