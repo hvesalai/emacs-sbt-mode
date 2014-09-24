@@ -278,6 +278,6 @@ mode."
     (comint-send-region buffer-name start end)
     (comint-send-string buffer-name "\n")
     (unless no-exit
-      (comint-send-string buffer-name sbt:quit-paste-command)))
+      (comint-send-string buffer-name sbt:quit-paste-command))))
 
-  (provide 'sbt-mode-comint))
+(provide 'sbt-mode-comint)
