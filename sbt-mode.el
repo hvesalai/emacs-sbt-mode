@@ -161,7 +161,7 @@ subsequent call to this function may provide additional input."
 (defun sbt:command (command &optional session)
   (unless command (error "Please specify a command"))
   (when (not (comint-check-proc (sbt:buffer-name session)))
-    (sbt:run-sbt nil nil nil session))
+    (sbt:run-sbt nil nil session))
   (when sbt:save-some-buffers
     (save-some-buffers
      (not compilation-ask-about-save)
@@ -187,7 +187,7 @@ subsequent call to this function may provide additional input."
     (with-current-buffer (sbt:buffer-name session)
       sbt:previous-command)))
 
-(defun sbt:run-sbt (&optional kill-existing-p pop-p  session)
+(defun sbt:run-sbt (&optional kill-existing-p pop-p session)
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
   (let* ((project-root (sbt:find-root))
