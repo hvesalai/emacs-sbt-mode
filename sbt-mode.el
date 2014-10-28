@@ -173,6 +173,7 @@ subsequent call to this function may provide additional input."
         (sbt:clear (current-buffer))
       (ignore-errors (compilation-forget-errors)))
     (comint-send-string (current-buffer) (concat command "\n"))
+    (setq next-error-last-buffer (current-buffer))
     (setq sbt:previous-command command)))
 
 (defun sbt:get-previous-command ()
