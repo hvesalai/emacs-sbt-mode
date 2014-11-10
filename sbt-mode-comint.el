@@ -52,9 +52,9 @@ as the comint-input-ring on console start-up"
                  (const :tag "Translate" t))
   :group 'sbt)
 
-(defvar sbt:quit-paste-command (kbd (if (eq system-type 'windows-nt)
-                                        "C-z"
-                                      "C-d"))
+(defvar sbt:quit-paste-command (if (eq system-type 'windows-nt)
+                                   (kbd "C-z")
+                                 (kbd "C-d"))
   "Keys for sending quit command")
 
 (defun sbt:initialize-for-comint-mode ()
