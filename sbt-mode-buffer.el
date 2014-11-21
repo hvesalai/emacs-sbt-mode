@@ -10,11 +10,12 @@
   :type 'string
   :group 'sbt)
 
-(defun sbt:buffer-name ()
+(defun sbt:buffer-name (&optional session)
   "Return the buffer name for running sbt."
-  (format "%s<%s>"
+  (format "%s<%s>:%s"
           sbt:buffer-name-base
-          (sbt:find-root)))
+          (sbt:find-root)
+          (or session "")))
 
 (defun sbt:require-buffer ()
   "Throw error if buffer the current buffer is not an sbt-buffer"
