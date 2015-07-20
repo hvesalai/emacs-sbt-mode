@@ -110,9 +110,12 @@ that outputs errors."
            (ignore-errors (with-current-buffer (sbt:buffer-name) (ring-elements comint-input-ring))))
 
      (list (completing-read (format "Command to run (default %s): " (sbt:get-previous-command))
-                            (completion-table-dynamic 'sbt:get-sbt-completions)
+                            (completion-table-dynamic 'sbt:get-sbt-completions-for-command)
                             nil nil nil 'sbt:command-history-temp (sbt:get-previous-command)))))
   (sbt:command command))
+
+(defun sbt:get-sbt-completions-for-command (input)
+  (ignore-errors (with-current-buffer (sbt:buffer-name) (sbt:get-sbt-completions input))))
 
 ;;;###autoload
 (defun sbt-run-previous-command ()
