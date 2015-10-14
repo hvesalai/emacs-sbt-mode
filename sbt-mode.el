@@ -272,7 +272,7 @@ buffer called *sbt*projectdir."
                        (make-composed-keymap compilation-shell-minor-mode-map
                                              comint-mode-map))
     (define-key map (kbd "TAB") 'sbt-completion-at-point)
-    (define-key map (kbd "C-c l") 'sbt-clear)
+    (define-key map (kbd "C-c C-v") 'sbt-clear)
 
     map)
   "Basic mode map for `sbt-start'")
