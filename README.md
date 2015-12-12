@@ -18,7 +18,7 @@ interacting with sbt from emacs. The core functionality includes:
 ## Setting the mode up for use
 
 1. Make sure you have the lastest version of **Gnu Emacs**
-installed. The mode has been developed on 24.2.
+installed. The mode has been developed on 24.3.
 
     For best performance of scala console completions, also install
     the latest version of
