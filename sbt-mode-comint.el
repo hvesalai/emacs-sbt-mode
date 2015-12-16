@@ -25,7 +25,7 @@ as the comint-input-ring on console start-up"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:sbt-prompt-regexp "^>[ ]*"
+(defcustom sbt:sbt-prompt-regexp "^\\(\\[[^\]]*\\] \\)?[>$][ ]*"
   "A regular expression to match sbt REPL prompt"
   :type 'string
   :group 'sbt)
@@ -40,7 +40,7 @@ as the comint-input-ring on console start-up"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:prompt-regexp "^\\(\\(scala\\)?>\\|[ ]+|\\)[ ]*"
+(defcustom sbt:prompt-regexp "^\\(\\(scala\\|\\[[^\]]*\\] \\)?[>$]\\|[ ]+|\\)[ ]*"
   "A regular expression to match sbt and scala console prompts"
   :type 'string
   :group 'sbt)
@@ -194,7 +194,10 @@ line.")
   (let ((point (point))
         (beg (save-excursion (comint-goto-process-mark)
                              (point)))
-        (end (max (point) (save-excursion (end-of-line)(skip-chars-backward " \t\n\r")(point))))
+        (end (max (point)
+                  (save-excursion (end-of-line)
+                                  (skip-chars-backward " \t\n\r")
+                                  (point))))
         mid)
     (goto-char beg)
     (beginning-of-line)
