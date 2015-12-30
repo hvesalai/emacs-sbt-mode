@@ -15,13 +15,15 @@
           ((if (stringp name-or-pred)
                (file-exists-p (expand-file-name name-or-pred dir))
              (funcall name-or-pred dir))
-           (sbt:find-root-impl name-or-pred parent dir))
+           (if sbt:prefer-nested-projects
+               dir
+             (sbt:find-root-impl name-or-pred parent dir)))
           ('t
            (sbt:find-root-impl name-or-pred parent best-root)))))
 
 (defun sbt:find-root ()
-  "Starting from the current default-directory, find the top-most
-parent directory that is an sbt root. An sbt root directory is
+  "Starting from the current default-directory, find a parent
+directory that is an sbt root. An sbt root directory is
 identified by the following rules:
 
   - a directory containing a 'project/build.properties' in it.
@@ -30,7 +32,10 @@ identified by the following rules:
     '*.sbt' or 'project/*.scala' file in it.
 
 The first rule is applied first and the second is used only if it
-fails to find the sbt root."
+fails to find the sbt root.
+
+The value of `sbt:prefer-nested-projects' determines the
+stopping criteria."
   (or sbt:buffer-project-root
       (let ((root (or (sbt:find-root-impl "project/build.properties")
                (sbt:find-root-impl 
