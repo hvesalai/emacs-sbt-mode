@@ -39,6 +39,12 @@
   :type 'boolean
   :group 'sbt)
 
+(defcustom sbt:prefer-nested-projects nil
+  "When finding sbt root directories, prefer nested projects.
+If nil, outer projects are preferred."
+  :type 'boolean
+  :group 'sbt)
+
 (defface sbt:error
   '((t :inherit error))
   "Face for displaying some sbt error messages"
