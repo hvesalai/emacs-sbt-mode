@@ -17,7 +17,7 @@ interacting with sbt from emacs. The core functionality includes:
 
 ## Setting the mode up for use
 
-1. Make sure you have the lastest version of **Gnu Emacs**
+1. Make sure you have the latest version of **Gnu Emacs**
 installed. The mode has been developed on 24.3.
 
     For best performance of scala console completions, also install
@@ -49,7 +49,7 @@ to the load-path and then to require it. For more information regarding
         ```lisp
         (require 'package)
         (add-to-list 'package-archives
-                     '("melpa" . "http://melpa.milkbox.net/packages/") t)
+                     '("melpa" . "https://melpa.org/packages/") t)
         (package-initialize)
         (unless (package-installed-p 'sbt-mode)
           (package-refresh-contents) (package-install 'sbt-mode))
@@ -83,7 +83,7 @@ To work efficiently with sbt-mode, you should customize these
 variables.
 
 - *sbt:program-name* - the name of the sbt executable, defaults to `sbt`.
-    Note: this variable is best configured throught the emacs customization
+    Note: this variable is best configured through the emacs customization
     menu (`M-x customize-variable` RET `sbt:program-name`) or set globally.
     You can not set it with the mode hook.
 - *grep-find-ignored-directories* - directories not to include in searches.
@@ -219,7 +219,7 @@ installed.
 
 - **M-x** *sbt-find-definitions* will search for the definition of the
     thing at point from the project `.scala` and `.java` files.
-- **M-x** *sbt-find-usages* will search for occurances of the id at
+- **M-x** *sbt-find-usages* will search for occurrences of the id at
     point from the project `.scala` and `.java` files.
 
 Use the `next-error` and `previous-error` command (or key-binding) to
@@ -233,7 +233,7 @@ loaded on start-up.
 
 When typing in multi-line code snippets, instead of using **RET** to
 separate lines, use **M-x** *comint-accumulate* (or the respective
-key-binding as adviced above in the customization section). This way,
+key-binding as advised above in the customization section). This way,
 if you need to modify the code, you can use **M-p** to recall the
 whole snippet for reworking.
 
