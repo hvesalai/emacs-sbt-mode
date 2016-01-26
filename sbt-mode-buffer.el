@@ -14,7 +14,7 @@
   "Return the buffer name for running sbt."
   (format "%s<%s>"
           sbt:buffer-name-base
-          (sbt:find-root)))
+          (abbreviate-file-name (sbt:find-root))))
 
 (defun sbt:require-buffer ()
   "Throw error if buffer the current buffer is not an sbt-buffer"
