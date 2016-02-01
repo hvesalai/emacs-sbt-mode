@@ -5,6 +5,7 @@
 
 (require 'compile)
 (require 'comint)
+(require 'sbt-mode-vars)
 (require 'sbt-mode-project)
 (require 'sbt-mode-buffer)
 (require 'sbt-mode-comint)
@@ -14,52 +15,6 @@
   (defvar sbt:submode)
   (defun scala-mode:set-scala-syntax-mode ()))
 
-(defcustom sbt:program-name "sbt"
-  "Program invoked by the `sbt:run-sbt' command."
-  :type 'string
-  :group 'sbt)
-
-(defcustom sbt:default-command "test:compile"
-  "The default command to run with sbt:command."
-  :type 'string
-  :group 'sbt)
-
-(defcustom sbt:save-some-buffers t
-  "Whether to run save-some-buffers before running a command."
-  :type 'boolean
-  :group 'sbt)
-
-(defcustom sbt:clear-buffer-before-command t
-  "Whether to clear the sbt buffer before running a command."
-  :type 'boolean
-  :group 'sbt)
-
-(defcustom sbt:display-command-buffer t
-  "Whether to display the buffer when running a command."
-  :type 'boolean
-  :group 'sbt)
-
-(defcustom sbt:prefer-nested-projects nil
-  "When finding sbt root directories, prefer nested projects.
-If nil, outer projects are preferred."
-  :type 'boolean
-  :group 'sbt)
-
-(defface sbt:error
-  '((t :inherit error))
-  "Face for displaying some sbt error messages"
-  :group 'sbt)
-
-(defface sbt:info
-  '((t :inherit success))
-  "A face for displaying some sbt info messages"
-  :group 'sbt)
-
-(defface sbt:warning
-  '((t :inherit warning))
-  "A face for displaying some sbt warning messages"
-  :group 'sbt)
-
 (defvar sbt:error-face 'sbt:error)
 (defvar sbt:info-face 'sbt:info)
 (defvar sbt:warning-face 'sbt:warning)
@@ -67,11 +22,6 @@ If nil, outer projects are preferred."
 (defvar-local sbt:previous-command sbt:default-command)
 
 (defvar sbt:command-history-temp nil)
-
-(defgroup sbt nil
-  "Support for sbt build REPL."
-  :group 'sbt
-  :prefix "sbt:")
 
 ;;;
 ;;; Our user commands

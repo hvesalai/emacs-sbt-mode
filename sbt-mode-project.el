@@ -3,6 +3,8 @@
 ;; Copyright(c) 2013 Heikki Vesalainen
 ;; For information on the License, see the LICENSE file
 
+(require 'sbt-mode-vars)
+
 (defvar sbt:buffer-project-root nil)
 
 (defun sbt:find-root-impl (name-or-pred &optional dir best-root)

@@ -3,6 +3,7 @@
 ;; Copyright(c) 2013 Heikki Vesalainen
 ;; For information on the License, see the LICENSE file
 
+(require 'sbt-mode-vars)
 (require 'sbt-mode-project)
 
 (defcustom sbt:buffer-name-base "*sbt*"

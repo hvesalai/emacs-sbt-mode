@@ -5,6 +5,7 @@
 
 (eval-when-compile (require 'cl)) ;; only need cl macros
 (require 'comint)
+(require 'sbt-mode-vars)
 (require 'sbt-mode-project)
 (require 'sbt-mode-buffer)
 
