@@ -48,13 +48,13 @@ If the sbt buffer is not in REPL mode, it will switch to REPL mode (console)."
     (pop-to-buffer (sbt:buffer-name))))
 
 ;;;###autoload
-(defun sbt-command (command)
+(defun sbt-command (command &optional focus)
   "Send a command to the sbt process of the current buffer's sbt project.
 Prompts for the command to send when in interactive mode. You can
 use tab completion.
 
 This command does the following:
-  - displays the buffer without moving focus to it
+  - displays the buffer moving focus to it if focus is t
   - erases the buffer
   - forgets about compilation errors
 
@@ -68,7 +68,7 @@ that outputs errors."
      (list (completing-read (format "Command to run (default %s): " (sbt:get-previous-command))
                             (completion-table-dynamic 'sbt:get-sbt-completions-for-command)
                             nil nil nil 'sbt:command-history-temp (sbt:get-previous-command)))))
-  (sbt:command command))
+  (sbt:command command focus))
 
 (defun sbt:get-sbt-completions-for-command (input)
   (ignore-errors (with-current-buffer (sbt:buffer-name) (sbt:get-sbt-completions input))))
@@ -114,7 +114,7 @@ subsequent call to this function may provide additional input."
       (erase-buffer)
       (ignore-errors (comint-send-string proc (kbd "C-l"))))))
 
-(defun sbt:command (command)
+(defun sbt:command (command &optional focus)
   (unless command (error "Please specify a command"))
 
   (when (not (comint-check-proc (sbt:buffer-name)))
@@ -127,7 +127,7 @@ subsequent call to this function may provide additional input."
 
   (with-current-buffer (sbt:buffer-name)
     (when sbt:display-command-buffer
-      (display-buffer (current-buffer)))
+      (if focus (pop-to-buffer (current-buffer)) (display-buffer (current-buffer))))
     (cond ((eq sbt:submode 'console)
            (comint-send-string (current-buffer) ":quit\n"))
           ((eq sbt:submode 'paste-mode)
