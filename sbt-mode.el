@@ -93,6 +93,13 @@ region are not sent."
   (interactive "r")
   (sbt:send-region start end))
 
+(defun sbt-send-string (s)
+  "Send the string s to the sbt process of the current buffer's sbt
+project. Whitespace and comments at the beginning or end of the
+region are not sent."
+  (interactive (list (read-from-minibuffer "String to eval: ")))
+  (sbt:send-string s))
+
 (defun sbt-paste-region (&optional no-exit)
   "Send the selected region (between the mark and the current
 point) to the sbt process of the current buffer's sbt project
