@@ -112,7 +112,7 @@ subsequent call to this function may provide additional input."
           (inhibit-read-only t))
       (ignore-errors (compilation-forget-errors))
       (erase-buffer)
-      (ignore-errors (comint-send-string proc (kbd "C-l"))))))
+      (ignore-errors (comint-send-string proc "\n")))))
 
 (defun sbt:command (command &optional focus)
   (unless command (error "Please specify a command"))
