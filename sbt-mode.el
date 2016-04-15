@@ -176,6 +176,11 @@ buffer called *sbt*projectdir."
         (message "Starting sbt in buffer %s " buffer-name)
         ;;(erase-buffer)
 
+	;; In windows set SBT_OPTS like "-Djline.terminal=jline.UnsupportedTerminal"
+	;; https://github.com/ensime/emacs-sbt-mode/issues/44
+	(when (and (eql system-type 'windows-nt) (not (getenv "SBT_OPTS")))
+	  (setenv "SBT_OPTS" "-Djline.terminal=jline.UnsupportedTerminal"))
+
         ;; insert a string to buffer so that process mark comes after
         ;; compilation-messages-start mark.
         (insert (concat "Running " sbt:program-name "\n"))
