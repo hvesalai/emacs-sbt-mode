@@ -150,12 +150,13 @@ subsequent call to this function may provide additional input."
 (defun sbt:run-sbt (&optional kill-existing-p pop-p)
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
-  (let* ((project-root (sbt:find-root))
+  (let* ((project-root (or (sbt:find-root)
+			   (error "Could not find project root, type `C-h f sbt:find-root` for help.")))
          (sbt-command-line (split-string sbt:program-name " "))
          (buffer-name (sbt:buffer-name))
          (inhibit-read-only 1))
-    (when (null project-root)
-      (error "Could not find project root, type `C-h f sbt:find-root` for help."))
+    ;; (when (null project-root)
+    ;;   (error "Could not find project root, type `C-h f sbt:find-root` for help."))
 
     (when (not (or (executable-find (nth 0 sbt-command-line))
                    (file-executable-p (concat project-root (nth 0 sbt-command-line)))))
