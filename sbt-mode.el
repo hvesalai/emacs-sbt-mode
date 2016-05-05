@@ -177,10 +177,7 @@ buffer called *sbt*projectdir."
         (message "Starting sbt in buffer %s " buffer-name)
         ;;(erase-buffer)
 
-	;; In windows set SBT_OPTS like "-Djline.terminal=jline.UnsupportedTerminal"
-	;; https://github.com/ensime/emacs-sbt-mode/issues/44
-	(when (and (eql system-type 'windows-nt) (not (getenv "SBT_OPTS")))
-	  (setenv "SBT_OPTS" "-Djline.terminal=jline.UnsupportedTerminal"))
+	(sbt:set-opts)
 
         ;; insert a string to buffer so that process mark comes after
         ;; compilation-messages-start mark.
@@ -189,6 +186,20 @@ buffer called *sbt*projectdir."
         (ignore-errors (compilation-forget-errors))
         (comint-exec (current-buffer) buffer-name (nth 0 sbt-command-line) nil (cdr sbt-command-line)))
       (current-buffer))))
+
+(defun sbt:set-opts ()
+  ;; In windows set SBT_OPTS like "-Djline.terminal=jline.UnsupportedTerminal"
+  ;; https://github.com/ensime/emacs-sbt-mode/issues/44
+  (when (eql system-type 'windows-nt)
+    (let ((sbt-opts (getenv "SBT_OPTS"))
+	  (opt "-Djline.terminal=jline.UnsupportedTerminal"))
+      (when (or (not sbt-opts)
+		(not (string-match opt sbt-opts)))
+	(setq sbt-opts
+	      (if sbt-opts
+		  (concat sbt-opts " " opt)
+		opt))
+	(setenv "SBT_OPTS" sbt-opts)))))
 
 (defun sbt:initialize-for-compilation-mode ()
   (setq-local
