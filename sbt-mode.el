@@ -150,12 +150,13 @@ subsequent call to this function may provide additional input."
 (defun sbt:run-sbt (&optional kill-existing-p pop-p)
   "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
-  (let* ((project-root (sbt:find-root))
+  (let* ((project-root (or (sbt:find-root)
+			   (error "Could not find project root, type `C-h f sbt:find-root` for help.")))
          (sbt-command-line (split-string sbt:program-name " "))
          (buffer-name (sbt:buffer-name))
          (inhibit-read-only 1))
-    (when (null project-root)
-      (error "Could not find project root, type `C-h f sbt:find-root` for help."))
+    ;; (when (null project-root)
+    ;;   (error "Could not find project root, type `C-h f sbt:find-root` for help."))
 
     (when (not (or (executable-find (nth 0 sbt-command-line))
                    (file-executable-p (concat project-root (nth 0 sbt-command-line)))))
@@ -176,6 +177,8 @@ buffer called *sbt*projectdir."
         (message "Starting sbt in buffer %s " buffer-name)
         ;;(erase-buffer)
 
+	(sbt:set-opts)
+
         ;; insert a string to buffer so that process mark comes after
         ;; compilation-messages-start mark.
         (insert (concat "Running " sbt:program-name "\n"))
@@ -183,6 +186,20 @@ buffer called *sbt*projectdir."
         (ignore-errors (compilation-forget-errors))
         (comint-exec (current-buffer) buffer-name (nth 0 sbt-command-line) nil (cdr sbt-command-line)))
       (current-buffer))))
+
+(defun sbt:set-opts ()
+  ;; In windows set SBT_OPTS like "-Djline.terminal=jline.UnsupportedTerminal"
+  ;; https://github.com/ensime/emacs-sbt-mode/issues/44
+  (when (eql system-type 'windows-nt)
+    (let ((sbt-opts (getenv "SBT_OPTS"))
+	  (opt "-Djline.terminal=jline.UnsupportedTerminal"))
+      (when (or (not sbt-opts)
+		(not (string-match opt sbt-opts)))
+	(setq sbt-opts
+	      (if sbt-opts
+		  (concat sbt-opts " " opt)
+		opt))
+	(setenv "SBT_OPTS" sbt-opts)))))
 
 (defun sbt:initialize-for-compilation-mode ()
   (setq-local
