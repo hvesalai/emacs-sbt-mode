@@ -1,4 +1,4 @@
-;;; scala-mode-project.el - Functions for discovering the current sbt project
+;;; sbt-mode-project.el - Functions for discovering the current sbt project
 ;;
 ;; Copyright(c) 2013 Heikki Vesalainen
 ;; For information on the License, see the LICENSE file
