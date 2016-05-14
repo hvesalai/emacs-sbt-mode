@@ -1,7 +1,17 @@
-;;; sbt-mode.el - Functions for discovering the current sbt project
+;;; sbt-mode.el --- Interactive support for sbt projects
+
+;; Copyright (c) 2013 Heikki Vesalainen
+
+;; Homepage: https://github.com/ensime/emacs-scala-mode
+;; Keywords: languages
+;; Package-Version:  0.1
+;; Package-Requires: ((scala-mode2 "0.22"))
+
+;;; Commentary:
 ;;
-;; Copyright(c) 2013 Heikki Vesalainen
-;; For information on the License, see the LICENSE file
+;;  Documentation at http://ensime.github.io/editors/emacs/sbt-mode/
+;;
+;;; Code:
 
 (require 'compile)
 (require 'comint)
