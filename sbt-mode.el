@@ -274,3 +274,4 @@ buffer called *sbt*projectdir."
   (add-hook 'sbt-mode-hook 'sbt:initialize-for-compilation-mode))
 
 (provide 'sbt-mode)
+;;; sbt-mode.el ends here
