@@ -2,10 +2,10 @@
 
 ;; Copyright (c) 2013 Heikki Vesalainen
 
-;; Homepage: https://github.com/ensime/emacs-scala-mode
+;; Homepage: https://github.com/ensime/emacs-sbt-mode
 ;; Keywords: languages
 ;; Package-Version:  0.1
-;; Package-Requires: ((scala-mode2 "0.22"))
+;; Package-Requires: ()
 
 ;;; Commentary:
 ;;
