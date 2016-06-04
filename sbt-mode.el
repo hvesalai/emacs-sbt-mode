@@ -225,9 +225,10 @@ buffer called *sbt*projectdir."
    '(("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 2 1)
      ("^\\[warn][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 1 1)
      ("^\\[info][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 0 1)
-     ;; could be improved
+     ;; this is tricky without negative lookahead, we're trying to avoid matching stacktraces
+     ;; but end up not matching scalatest messages that begin with `a'
      ;; https://github.com/scalatest/scalatest/issues/630#issuecomment-223758829
-     ("^\\[info][[:space:]]+\\(.*\\) (\\([^:[:space:]]+\\):\\([^:[:space:]]+\\))" 2 3 nil 2 1)))
+     ("^\\[info][[:space:]]+\\(.*\\) (\\([^:[:space:]]+\\):\\([[:digit:]]+\\))" 2 3 nil 2 1)))
   (setq-local
    compilation-mode-font-lock-keywords
    '(("^\\[error] \\(Failed: Total .*\\)"
