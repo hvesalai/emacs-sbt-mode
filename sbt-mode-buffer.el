@@ -3,6 +3,8 @@
 ;; Copyright(c) 2013 Heikki Vesalainen
 ;; For information on the License, see the LICENSE file
 
+(eval-when-compile (require 'cl)) ;; only need cl macros
+
 (require 'sbt-mode-vars)
 (require 'sbt-mode-project)
 
@@ -26,6 +28,7 @@
   "Return non-nil if the current buffer is sbt-buffer"
   (derived-mode-p 'sbt-mode))
 
+;;;###autoload
 (defun sbt:switch-to-active-sbt-buffer ()
   "Switch to buffer with running sbt process.
 If run in buffer in scala project then it switch to that project sbt buffer (if some exists).
@@ -36,7 +39,7 @@ When run in buffer with no scala project then based on number of sbt buffers thi
   (interactive)
   (let ((current-sbt-root (sbt:find-root))
 	(root-and-buffers
-	 (loop for process being the elements of (process-list)
+	 (cl-loop for process being the elements of (process-list)
 	       for current-process-buffer = (process-buffer process)
 	       when (and
 		     (bufferp current-process-buffer) ;; process must have associated buffer
