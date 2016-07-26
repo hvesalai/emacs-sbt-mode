@@ -121,7 +121,7 @@ Sbt project it will create one."
   (unless (sbt:find-root)
      (sbt:switch-to-active-sbt-buffer))
   (let ((sbt-buffer (sbt-hydra:sbt-buffer)))
-    (if sbt-buffer
+    (if (and sbt-buffer sbt-hydra:current-hydra)
         (with-current-buffer sbt-buffer
           (sbt-hydra:run-current-hydra))
       (let ((res (sbt-hydra:create-hydra)))
