@@ -100,18 +100,25 @@ to run in `after-save-hook' which will run last sbt command in sbt buffer."
 (defun sbt-hydra:sbt-buffer ()
   (let* ((current-sbt-root (sbt:find-root))
          (root-and-buffers
-	 (loop for process being the elements of (process-list)
-	       for current-process-buffer = (process-buffer process)
-	       when (and
-		     (bufferp current-process-buffer) ;; process must have associated buffer
-		     (with-current-buffer current-process-buffer
-		       (and
-			(sbt:mode-p)
-			(process-live-p process)
-			(equal current-sbt-root (sbt:find-root)))))
-	       collect current-process-buffer into file-buffers
-               finally return file-buffers)))
+          (loop for process being the elements of (process-list)
+                for current-process-buffer = (process-buffer process)
+                when (and
+                      (bufferp current-process-buffer) ;; process must have associated buffer
+                      (with-current-buffer current-process-buffer
+                        (and
+                         (sbt:mode-p)
+                         (process-live-p process)
+                         (equal current-sbt-root (sbt:find-root)))))
+                collect current-process-buffer into file-buffers
+                finally return file-buffers)))
     (car root-and-buffers)))
+
+(defmacro sbt-hydra:with-sbt-buffer (body)
+  `(let ((sbt-buffer (sbt-hydra:sbt-buffer)))
+     (if sbt-buffer
+         (with-current-buffer sbt-buffer
+           ,body)
+       (sbt-hydra:create-new-hydra))))
 
 ;;;###autoload
 (defun sbt-hydra:hydra ()
@@ -120,13 +127,10 @@ Sbt project it will create one."
   (interactive)
   (unless (sbt:find-root)
     (sbt:switch-to-active-sbt-buffer))
-  (let ((sbt-buffer (sbt-hydra:sbt-buffer)))
-    (if sbt-buffer
-        (with-current-buffer sbt-buffer
-          (if sbt-hydra:current-hydra
-              (sbt-hydra:run-current-hydra)
-            (sbt-hydra:create-new-hydra)))
-      (sbt-hydra:create-new-hydra))))
+  (sbt-hydra:with-sbt-buffer
+   (if sbt-hydra:current-hydra
+       (sbt-hydra:run-current-hydra)
+     (sbt-hydra:create-new-hydra))))
 
 (defun sbt-hydra:create-new-hydra ()
   (let ((res (sbt-hydra:create-hydra)))
@@ -377,21 +381,24 @@ x - clean        - reset substring (-- -z) to empty string
 
 (defun sbt-hydra:test-only-hydra-on ()
   (if (functionp 'sbt-test-hydra/body)
-      (progn
-        (setq sbt-hydra:test-hydra-active t)
-        (sbt-test-hydra/body))
+      (sbt-hydra:with-sbt-buffer
+       (progn
+         (setq sbt-hydra:test-hydra-active t)
+         (sbt-test-hydra/body)))
     (message "No hydra defined for testOnly command")
     ;; let's run current hydra again
     (sbt-hydra:run-current-hydra)))
 
 (defun sbt-hydra:test-only-hydra-off ()
-  (setq sbt-hydra:test-hydra-active nil)
-  (sbt-hydra:run-current-hydra))
+  (sbt-hydra:with-sbt-buffer
+   (progn (setq sbt-hydra:test-hydra-active nil)
+          (sbt-hydra:run-current-hydra))))
 
 (defun sbt-hydra:run-current-hydra ()
-  (if sbt-hydra:test-hydra-active
-      (sbt-test-hydra/body)
-    (funcall sbt-hydra:current-hydra)))
+  (sbt-hydra:with-sbt-buffer
+   (if sbt-hydra:test-hydra-active
+       (sbt-test-hydra/body)
+     (funcall sbt-hydra:current-hydra))))
 
 (defun sbt-test-hydra-command:switch-to-sbt-hydra ()
   `((sbt-hydra:test-only-hydra-off) nil :exit t))
@@ -405,8 +412,9 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:switch-hydra (project)
   "Switch to project hydra and remember what hydra is current one."
   (let ((project-hydra (intern (format "%s/body" project))))
-    `((progn (setq sbt-hydra:current-hydra ',project-hydra)
-             (,project-hydra)) nil :exit t :cmd-name ,(format "%s" project))))
+    `((sbt-hydra:with-sbt-buffer
+       (progn (setq sbt-hydra:current-hydra ',project-hydra)
+              (,project-hydra))) nil :exit t :cmd-name ,(format "%s" project))))
 
 (defun sbt-hydra:keys-and-projects (current-project key project-name)
   (format "_%s_ %s" key (if (equal current-project project-name)
@@ -518,22 +526,22 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
         (let ((buffer-res (sbt:switch-to-active-sbt-buffer)))
           (if (or (bufferp buffer-res)
                   (equal buffer-res "Already in sbt buffer!"))
-             (progn
-               ;; Existing sbt buffer
-               (hack-dir-local-variables-non-file-buffer)
-               (if sbt-hydra:projects
-                   (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
-                 (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects)
-                 (sbt:command "projects")))
-           (let ((sbt:clear-buffer-before-command nil))
-             ;; New sbt buffer
-             (sbt:run-sbt)
-             (sbt:switch-to-active-sbt-buffer)
-             (hack-dir-local-variables-non-file-buffer)
-             (if sbt-hydra:projects
-                 (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
-               (sbt:command "projects")
-               (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects-skip-init))))))
+              (progn
+                ;; Existing sbt buffer
+                (hack-dir-local-variables-non-file-buffer)
+                (if sbt-hydra:projects
+                    (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
+                  (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects)
+                  (sbt:command "projects")))
+            (let ((sbt:clear-buffer-before-command nil))
+              ;; New sbt buffer
+              (sbt:run-sbt)
+              (sbt:switch-to-active-sbt-buffer)
+              (hack-dir-local-variables-non-file-buffer)
+              (if sbt-hydra:projects
+                  (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
+                (sbt:command "projects")
+                (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects-skip-init))))))
     "Not in sbt project. Hydra can be generated only from sbt project. See `sbt:find-root' to get more informations."))
 
 (defun sbt-hydra:parse-main-class (sbt-output)
@@ -591,6 +599,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 
 (defun sbt-hydra:generate-hydras-from-projects (projects)
   (sbt-hydra:generate-hydras projects)
+  (sbt-hydra:run-current-hydra)
   (message "Success hydra for projects %s created." projects))
 
 (defun sbt-hydra:get-projects (sbt-output)
