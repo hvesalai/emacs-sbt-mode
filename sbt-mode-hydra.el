@@ -295,8 +295,8 @@ x - clean        - reset substring (-- -z) to empty string
           (display-buffer help #'display-buffer-pop-up-window))))))
 
 (defun sbt-hydra:run (project)
-  (let ((main-class (cdr (assoc project sbt-hydra:main-methods))))
-    (cond ((and (eq nil main-class))
+  (let ((main-class (cdr (assq (intern project) sbt-hydra:main-methods))))
+    (cond ((eq nil main-class)
            (let ((cmd (format "show %s/mainClass" project)))
              (sbt:switch-to-active-sbt-buffer)
              (sbt-hydra:send-eof-if-need)
@@ -306,7 +306,8 @@ x - clean        - reset substring (-- -z) to empty string
           ((equal "None" main-class)
            (message "No main class for project %s" project))
           ((equal "" main-class)
-           (message "Error when getting main class for project %s" project))
+           (message "Error when getting main class for project %s. Please try again." project)
+           (setq sbt-hydra:main-methods (assq-delete-all (intern project) sbt-hydra:main-methods)))
           (t
            (sbt-hydra:run-run-project-command
             (format "run %s"
@@ -594,7 +595,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 (defun sbt-hydra:get-main-class (sbt-output)
   (let* ((project (sbt-hydra:project-name-from-current-hydra))
          (main-class (sbt-hydra:get-main-class-for-project sbt-output project)))
-    (add-to-list 'sbt-hydra:main-methods `(,project . ,(concat "" main-class)))
+    (add-to-list 'sbt-hydra:main-methods `(,(intern project) . ,(concat "" main-class)))
     (sbt-hydra:run project)))
 
 (defun sbt-hydra:generate-hydras-from-projects (projects)
