@@ -53,6 +53,13 @@ as the comint-input-ring on console start-up"
                  (const :tag "Translate" t))
   :group 'sbt)
 
+(defcustom sbt:scroll-to-bottom-on-output t
+  "If `t' will always scroll sbt buffer to the bottom on insertion of a new output.
+If `nil' will stop scrolling on a first error encountered or if point is not on last
+line of output buffer."
+  :type 'boolean
+  :group 'sbt)
+
 (defvar sbt:quit-paste-command (if (eq system-type 'windows-nt)
                                    (kbd "C-z")
                                  (kbd "C-d"))
@@ -63,7 +70,7 @@ as the comint-input-ring on console start-up"
   (when (derived-mode-p 'comint-mode)
 
     (setq comint-process-echoes t)
-    (setq comint-scroll-to-bottom-on-output t)
+    (setq comint-scroll-to-bottom-on-output sbt:scroll-to-bottom-on-output)
     (setq comint-prompt-regexp sbt:prompt-regexp)
     (setq-local comint-use-prompt-regexp t)
     (setq-local comint-prompt-read-only t)
