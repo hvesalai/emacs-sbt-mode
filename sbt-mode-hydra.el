@@ -3,6 +3,11 @@
 ;; Copyright (C) 2016 Josef Vlach
 ;; License: http://www.gnu.org/licenses/gpl.html
 
+;; Homepage: https://github.com/ensime/emacs-sbt-mode
+;; Keywords: languages
+;; Package-Version:  0.2
+;; Package-Requires: ()
+
 ;;; Commentary:
 ;;
 ;; Workflow explanation:
@@ -14,8 +19,8 @@
 ;;
 ;;; Code:
 
-(eval-when-compile (require 'cl)) ;; only need cl macros
-(require 'hydra)
+(require 'cl-lib)
+(require 'hydra "hydra" 't)
 (require 'comint)
 (require 'sbt-mode-project)
 (require 'sbt-mode-buffer)
@@ -125,6 +130,8 @@ to run in `after-save-hook' which will run last sbt command in sbt buffer."
   "Show Sbt hydra for current Sbt project. If there is no hydra defined for current
 Sbt project it will create one."
   (interactive)
+  (if (not (macrop 'defhydra))
+      (error "sbt-mode-hydra.el: No `hydra.el' available. To use `sbt-hydra:hydra' command you need to install hydra.el."))
   (unless (sbt:find-root)
     (sbt:switch-to-active-sbt-buffer))
   (sbt-hydra:with-sbt-buffer
@@ -386,7 +393,7 @@ x - clean        - reset substring (-- -z) to empty string
        (progn
          (setq sbt-hydra:test-hydra-active t)
          (sbt-test-hydra/body)))
-    (message "No hydra defined for testOnly command")
+    (sbt-hydra:no-test-hydra)
     ;; let's run current hydra again
     (sbt-hydra:run-current-hydra)))
 
@@ -398,8 +405,13 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:run-current-hydra ()
   (sbt-hydra:with-sbt-buffer
    (if sbt-hydra:test-hydra-active
-       (sbt-test-hydra/body)
+       (if (functionp 'sbt-test-hydra/body)
+           (sbt-test-hydra/body)
+     	(sbt-hydra:no-test-hydra))
      (funcall sbt-hydra:current-hydra))))
+
+(defun sbt-hydra:no-test-hydra ()
+  (message "No hydra defined for testOnly command"))
 
 (defun sbt-test-hydra-command:switch-to-sbt-hydra ()
   `((sbt-hydra:test-only-hydra-off) nil :exit t))
@@ -488,7 +500,7 @@ x - clean        - reset substring (-- -z) to empty string
         ((string-prefix-p sbt:buffer-name-base (buffer-name))
          (let ((should-text (sbt-hydra:should-text-from-sbt-output)))
            (concat should-text "")))
-        ((string-suffix-p ".scala" (buffer-name (current-buffer)))
+        ((string-match ".scala$" (buffer-name (current-buffer)))
          (let* ((current-line (thing-at-point 'line))
                 (should-text (when (string-match "\"\\(.*\\)\" \\(in\\|should\\)" current-line)
                                (replace-regexp-in-string "\"" "" (match-string-no-properties 1 current-line)))))
