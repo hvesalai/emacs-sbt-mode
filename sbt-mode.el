@@ -127,6 +127,11 @@ subsequent call to this function may provide additional input."
 (defun sbt:command (command &optional focus)
   (unless command (error "Please specify a command"))
 
+  (unless (sbt:find-root)
+    (error (concat "You're not in an sbt project.  "
+		   "Maybe build.sbt or build.scala is missing?  "
+		   "See http://ensime.org/build_tools")))
+
   (when (not (comint-check-proc (sbt:buffer-name)))
     (sbt:run-sbt))
 
