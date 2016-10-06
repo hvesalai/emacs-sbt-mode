@@ -63,8 +63,8 @@ When run in buffer with no scala project then based on number of sbt buffers thi
 	   (if (eq 1 (length root-and-buffers))
 	       (cdar root-and-buffers)
 	     ;; we have more than one sbt process running, let user choose which one to switch to
-	     (let ((sbt-projects (loop for (key . value) in root-and-buffers
-				       collect key)))
+	     (let ((sbt-projects (cl-loop for (key . value) in root-and-buffers
+					  collect key)))
 	       (cdr (assoc
 		     (if (fboundp 'ido-completing-read)
 			 (ido-completing-read "Switch to sbt buffer for project: " sbt-projects)

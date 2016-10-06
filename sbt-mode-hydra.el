@@ -105,17 +105,17 @@ to run in `after-save-hook' which will run last sbt command in sbt buffer."
 (defun sbt-hydra:sbt-buffer ()
   (let* ((current-sbt-root (sbt:find-root))
          (root-and-buffers
-          (loop for process being the elements of (process-list)
-                for current-process-buffer = (process-buffer process)
-                when (and
-                      (bufferp current-process-buffer) ;; process must have associated buffer
-                      (with-current-buffer current-process-buffer
-                        (and
-                         (sbt:mode-p)
-                         (process-live-p process)
-                         (equal current-sbt-root (sbt:find-root)))))
-                collect current-process-buffer into file-buffers
-                finally return file-buffers)))
+          (cl-loop for process being the elements of (process-list)
+                   for current-process-buffer = (process-buffer process)
+                   when (and
+                         (bufferp current-process-buffer) ;; process must have associated buffer
+                         (with-current-buffer current-process-buffer
+                           (and
+                            (sbt:mode-p)
+                            (process-live-p process)
+                            (equal current-sbt-root (sbt:find-root)))))
+                   collect current-process-buffer into file-buffers
+                   finally return file-buffers)))
     (car root-and-buffers)))
 
 (defmacro sbt-hydra:with-sbt-buffer (body)
