@@ -5,7 +5,7 @@
 ;; Homepage: https://github.com/ensime/emacs-sbt-mode
 ;; Keywords: languages
 ;; Package-Version:  0.2
-;; Package-Requires: ()
+;; Package-Requires: ((emacs "24.4"))
 
 ;;; Commentary:
 ;;
