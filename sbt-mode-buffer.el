@@ -3,7 +3,7 @@
 ;; Copyright(c) 2013 Heikki Vesalainen
 ;; For information on the License, see the LICENSE file
 
-(eval-when-compile (require 'cl)) ;; only need cl macros
+(require 'cl-lib)
 
 (require 'sbt-mode-vars)
 (require 'sbt-mode-project)
