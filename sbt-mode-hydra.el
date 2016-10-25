@@ -108,7 +108,9 @@ to run in `after-save-hook' which will run last sbt command in sbt buffer."
           (cl-loop for process being the elements of (process-list)
                    for current-process-buffer = (process-buffer process)
                    when (and
+                         (equal (process-status process) 'run) ;; proces must be running
                          (bufferp current-process-buffer) ;; process must have associated buffer
+                         (buffer-live-p current-process-buffer) ;; buffer must not be killed
                          (with-current-buffer current-process-buffer
                            (and
                             (sbt:mode-p)
