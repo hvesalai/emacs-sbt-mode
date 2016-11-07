@@ -222,8 +222,11 @@ buffer called *sbt*projectdir."
    '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
   (setq-local
    compilation-error-regexp-alist
-   '(("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 2 1)
+   '(("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 2 1) ;; sbt 1.0 contains column information
+     ("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 2 1)
+     ("^\\[warn][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 1 1)
      ("^\\[warn][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 1 1)
+     ("^\\[info][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 0 1)
      ("^\\[info][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 0 1)
      ;; this is tricky without negative lookahead, we're trying to avoid matching stacktraces
      ;; but end up not matching scalatest messages that begin with `a'
@@ -272,25 +275,6 @@ buffer called *sbt*projectdir."
     map)
   "Basic mode map for `sbt-start'")
 
-(defun sbt:compilation-parse-errors (start end &rest rules)
-  "Since with compile.el it is impossible to parse scalac error message
-with column information (since column indicator is on different line
-then file name and row), we are going to use this :after advice for parsing
-scalac output and update `compilation-message's in sbt buffer accordingly."
-  (when (string-prefix-p sbt:buffer-name-base (buffer-name))
-    (progn
-      (goto-char start)
-      (beginning-of-line)
-      (while (re-search-forward "^\\[error][[:space:]]+^$" end t)
-        (save-match-data
-          (let* ((error-column (current-column))
-                 (compilation-message-location (previous-single-property-change (point) 'compilation-message))
-                 (compilation-message-property (get-text-property (1- compilation-message-location) 'compilation-message))
-                 (compilation-message-loc (compilation--message->loc compilation-message-property)))
-            ;; update only `compilation-message-loc' which do not have column information already
-            (when (null (car compilation-message-loc))
-              (setcar compilation-message-loc (- error-column 8)))))))))
-
 (define-derived-mode sbt-mode comint-mode "sbt"
   "Major mode for `sbt-start'.
 
@@ -298,8 +282,7 @@ scalac output and update `compilation-message's in sbt buffer accordingly."
   (use-local-map sbt:mode-map)
   (ignore-errors (scala-mode:set-scala-syntax-mode))
   (add-hook 'sbt-mode-hook 'sbt:initialize-for-comint-mode)
-  (add-hook 'sbt-mode-hook 'sbt:initialize-for-compilation-mode)
-  (advice-add 'compilation-parse-errors :after #'sbt:compilation-parse-errors))
+  (add-hook 'sbt-mode-hook 'sbt:initialize-for-compilation-mode))
 
 (provide 'sbt-mode)
 ;;; sbt-mode.el ends here
