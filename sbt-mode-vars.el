@@ -15,7 +15,7 @@
   :group 'sbt)
 
 (defcustom sbt:default-command "test:compile"
-  "The default command to run with sbt:command."
+  "The default command to run with sbt-command."
   :type 'string
   :group 'sbt)
 

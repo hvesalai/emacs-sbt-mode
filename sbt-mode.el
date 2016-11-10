@@ -78,7 +78,9 @@ that outputs errors."
      (list (completing-read (format "Command to run (default %s): " (sbt:get-previous-command))
                             (completion-table-dynamic 'sbt:get-sbt-completions-for-command)
                             nil nil nil 'sbt:command-history-temp (sbt:get-previous-command)))))
-  (sbt:command command focus))
+  (sbt:command command focus)
+  (with-current-buffer (sbt:buffer-name)
+    (setq sbt:previous-command command)))
 
 (defun sbt:get-sbt-completions-for-command (input)
   (ignore-errors (with-current-buffer (sbt:buffer-name) (sbt:get-sbt-completions input))))
@@ -153,8 +155,7 @@ subsequent call to this function may provide additional input."
         (sbt:clear (current-buffer))
       (ignore-errors (compilation-forget-errors)))
     (comint-send-string (current-buffer) (concat command "\n"))
-    (setq next-error-last-buffer (current-buffer))
-    (setq sbt:previous-command command)))
+    (setq next-error-last-buffer (current-buffer))))
 
 (defun sbt:get-previous-command ()
   (if (not (get-buffer (sbt:buffer-name)))
