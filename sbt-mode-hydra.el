@@ -128,14 +128,14 @@ to run in `after-save-hook' which will run last sbt command in sbt buffer."
        (sbt-hydra:create-new-hydra))))
 
 ;;;###autoload
-(defun sbt-hydra:hydra ()
+(defun sbt-hydra ()
   "Show Sbt hydra for current Sbt project. If there is no hydra defined for current
 Sbt project it will create one."
   (interactive)
   (if (not (macrop 'defhydra))
-      (error "sbt-mode-hydra.el: No `hydra.el' available. To use `sbt-hydra:hydra' command you need to install hydra.el."))
+      (error "sbt-mode-hydra.el: No `hydra.el' available. To use `sbt-hydra' command you need to install hydra.el."))
   (unless (sbt:find-root)
-    (sbt:switch-to-active-sbt-buffer))
+    (sbt-switch-to-active-sbt-buffer))
   (sbt-hydra:with-sbt-buffer
    (if sbt-hydra:current-hydra
        (sbt-hydra:run-current-hydra)
@@ -164,7 +164,7 @@ it will execute 'run' command immediately, otherwise it will send
 'eof' to sbt before running 'run' again. (This is for Play Framework
 support)."
   (remove-hook 'after-save-hook 'sbt-hydra:run-previous-command)
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (when (sbt:find-root)
     (sbt-hydra:send-eof-if-need)
     (sbt-hydra:run-previous-sbt-command)))
@@ -210,7 +210,7 @@ _c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ e
   `((sbt-hydra:run-project-command "name" ,project) nil))
 
 (defun sbt-hydra-command:switch-to-sbt-buffer ()
-  `((sbt:switch-to-active-sbt-buffer) nil))
+  `((sbt-switch-to-active-sbt-buffer) nil))
 
 (defun sbt-hydra-command:reload ()
   `((sbt-hydra:run-sbt-command "reload") nil))
@@ -307,7 +307,7 @@ x - clean        - reset substring (-- -z) to empty string
   (let ((main-class (cdr (assq (intern project) sbt-hydra:main-methods))))
     (cond ((eq nil main-class)
            (let ((cmd (format "show %s/mainClass" project)))
-             (sbt:switch-to-active-sbt-buffer)
+             (sbt-switch-to-active-sbt-buffer)
              (sbt-hydra:send-eof-if-need)
              (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-main-class)
              (setq sbt-hydra:hydra-previous-command cmd)
@@ -323,15 +323,15 @@ x - clean        - reset substring (-- -z) to empty string
                     (concat "" (cdr (assoc project sbt-hydra:command-line-arguments)))) project)))))
 
 (defun sbt-hydra:run-sbt-command (command)
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (sbt:command command))
 
 (defun sbt-hydra:run-previous-sbt-command ()
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (sbt:command (sbt:get-previous-command)))
 
 (defun sbt-hydra:edit-and-run-previous-sbt-command ()
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (sbt:command (read-from-minibuffer "Edit sbt command: " (sbt:get-previous-command))))
 
 (defun sbt-hydra:should-text-from-sbt-output ()
@@ -385,7 +385,7 @@ x - clean        - reset substring (-- -z) to empty string
                              project fqn file-name (concat "" (format " -- -z \"%s\"" substring)))))))))))
 
 (defun sbt-hydra:eof ()
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (setq sbt-hydra:hydra-previous-command "name") ;; allow eof and run command after each other
   (comint-send-eof))
 
@@ -481,7 +481,7 @@ x - clean        - reset substring (-- -z) to empty string
                                                  (format "\"%s\"" system-property)) system-properties ",")))))
 
 (defun sbt-hydra:run-run-project-command (command project)
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (sbt-hydra:send-eof-if-need)
   (let ((cmd (format "%s/%s" project command)))
     (setq sbt-hydra:hydra-previous-command cmd)
@@ -491,7 +491,7 @@ x - clean        - reset substring (-- -z) to empty string
     (sbt:command cmd)))
 
 (defun sbt-hydra:run-project-command (command project)
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (sbt-hydra:send-eof-if-need)
   (let ((cmd (format "%s/%s" project command)))
     (setq sbt-hydra:hydra-previous-command cmd)
@@ -538,7 +538,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (if (sbt:find-root)
       (progn
         (setq sbt-hydra:sbt-output-cleared "")
-        (let ((buffer-res (sbt:switch-to-active-sbt-buffer)))
+        (let ((buffer-res (sbt-switch-to-active-sbt-buffer)))
           (if (or (bufferp buffer-res)
                   (equal buffer-res "Already in sbt buffer!"))
               (progn
@@ -551,7 +551,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
             (let ((sbt:clear-buffer-before-command nil))
               ;; New sbt buffer
               (sbt:run-sbt)
-              (sbt:switch-to-active-sbt-buffer)
+              (sbt-switch-to-active-sbt-buffer)
               (hack-dir-local-variables-non-file-buffer)
               (if sbt-hydra:projects
                   (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
@@ -647,7 +647,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 
 (defun sbt-hydra:parse-failing-test ()
   "Parse sbt buffer output and look for failed tests"
-  (sbt:switch-to-active-sbt-buffer)
+  (sbt-switch-to-active-sbt-buffer)
   (save-excursion
     (goto-char (point-max))
     (search-backward "Failed tests:")
