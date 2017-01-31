@@ -75,7 +75,8 @@ line of output buffer."
     (setq-local comint-use-prompt-regexp t)
     (setq-local comint-prompt-read-only t)
     (setq-local comint-buffer-maximum-size 4096)
-    (setq-local comint-output-filter-functions '(ansi-color-process-output comint-postoutput-scroll-to-bottom))
+    (setq-local comint-preoutput-filter-functions '(sbt:move-marker-before-prompt-filter))
+    (setq-local comint-output-filter-functions '(ansi-color-process-output comint-postoutput-scroll-to-bottom sbt:move-marker-after-prompt-filter))
     (setq ansi-color-for-comint-mode sbt:ansi-support)
     (setq comint-input-sender 'sbt:input-sender)
     (setq-local sbt:previous-history-file nil)
@@ -106,6 +107,41 @@ line.")
         ;; delete the ansi code and the previous line
         (delete-region (save-excursion (forward-line -1) (point)) (match-end 0))))
     input))
+
+(defun sbt:move-marker-before-prompt-filter (input-string)
+  "Move the process marker to beginning of prompt so that the
+prompt will be moved with output. Also mangles the `input-string`
+so that if it contains the prompt, it is moved to the end of the
+input. This is needed because, especially in sbt, the output can
+contain out-of-band output from other Threads that mix up the
+prompt."
+
+  (save-excursion
+    (forward-line 0) ;; start of line
+    (when (looking-at sbt:console-prompt-regexp)
+      (set-marker (process-mark (get-buffer-process (current-buffer))) (- (point) 1))))
+
+  (let ((new-input-string 
+         (if (string-match sbt:console-prompt-regexp input-string)
+             (let* ((beg (match-beginning 0))
+                    (before (substring input-string 0 (max 0 (- beg 1))))
+                    (nl (substring input-string (max 0 (- beg 1)) beg))
+                    (after (substring input-string (match-end 0)))
+                    (prompt (match-string 0 input-string)))
+               (concat before after nl prompt))
+           input-string)))
+    new-input-string))
+
+(defun sbt:move-marker-after-prompt-filter (input-string)
+  "Move the process marker to after prompt. This just reverses
+what `sbt:move-marker-before-prompt-filter` did."
+
+  (let ((pmark (process-mark (get-buffer-process (current-buffer)))))
+    (save-excursion
+      (goto-char pmark)
+      (forward-line 1)
+      (when (looking-at sbt:console-prompt-regexp)
+        (set-marker pmark (match-end 0))))))
 
 (defun sbt:switch-submode (input)
   (when (sbt:mode-p)
