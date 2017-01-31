@@ -53,7 +53,7 @@ as the comint-input-ring on console start-up"
                  (const :tag "Translate" t))
   :group 'sbt)
 
-(defcustom sbt:scroll-to-bottom-on-output t
+(defcustom sbt:scroll-to-bottom-on-output nil
   "If `t' will always scroll sbt buffer to the bottom on insertion of a new output.
 If `nil' will stop scrolling on a first error encountered or if point is not on last
 line of output buffer."
