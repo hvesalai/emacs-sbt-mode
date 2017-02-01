@@ -116,10 +116,12 @@ input. This is needed because, especially in sbt, the output can
 contain out-of-band output from other Threads that mix up the
 prompt."
 
-  (save-excursion
-    (forward-line 0) ;; start of line
-    (when (looking-at sbt:console-prompt-regexp)
-      (set-marker (process-mark (get-buffer-process (current-buffer))) (- (point) 1))))
+  (let ((pmark (process-mark (get-buffer-process (current-buffer)))))
+    (save-excursion
+      (goto-char pmark)
+      (forward-line 0) ;; start of line
+      (when (looking-at sbt:console-prompt-regexp)
+        (set-marker pmark (- (point) 1)))))
 
   (let ((new-input-string 
          (if (string-match sbt:console-prompt-regexp input-string)
