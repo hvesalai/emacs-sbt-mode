@@ -288,6 +288,7 @@ p - parse        - parse output of Sbt buffer for failed test. It must be run af
 o - testHydra    - switch to special hydra which is created by 'parse' action. More info in section 'Test Hydra'
 u - testOnly     - run 'testOnly' command for active project with substring parameter (-- -z) containing text from the line point
                    is at. Works in Sbt buffer or Scala source file, but point must be at line contaning should text of the test.
+f - it:test      - execute 'it:test' command for active project
 
 *** Test Hydra ***
 
