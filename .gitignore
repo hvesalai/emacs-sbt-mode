@@ -1,2 +1,5 @@
 *.elc
 .latest-build
+
+.cask
+sbt-mode-pkg.el
