@@ -236,6 +236,9 @@ _c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ e
 (defun sbt-hydra-command:test-only-hydra ()
   `((sbt-hydra:test-only-hydra-on) nil :exit t))
 
+(defun sbt-hydra-command:it-test (project)
+  `((sbt-hydra:run-project-command "it:test" ,project) nil))
+
 (defun sbt-hydra-command:quit ()
   `(nil nil))
 
@@ -285,6 +288,7 @@ p - parse        - parse output of Sbt buffer for failed test. It must be run af
 o - testHydra    - switch to special hydra which is created by 'parse' action. More info in section 'Test Hydra'
 u - testOnly     - run 'testOnly' command for active project with substring parameter (-- -z) containing text from the line point
                    is at. Works in Sbt buffer or Scala source file, but point must be at line contaning should text of the test.
+f - it:test      - execute 'it:test' command for active project
 
 *** Test Hydra ***
 
@@ -458,9 +462,10 @@ x - clean        - reset substring (-- -z) to empty string
                         (list (sbt-hydra-command:reload))
                         (list (sbt-hydra-command:run-previous-sbt-command))
                         (list (sbt-hydra-command:run-test-only))
+                        (list (sbt-hydra-command:it-test current-project))
                         (list (sbt-hydra-command:edit-last-command))
                         (list (sbt-hydra-command:help))))
-         (keys '("l" "c" "t" "r" "y" "e" "q" "n" "p" "o" "s" "d" "a" "u" "i" "h"))
+         (keys '("l" "c" "t" "r" "y" "e" "q" "n" "p" "o" "s" "d" "a" "u" "f" "i" "h"))
          (sbt-commands (cl-mapcar 'sbt-hydra:add-command-key keys sbt-commands))
          (project-hydras (mapcar 'sbt-hydra:switch-hydra projects))
          (project-keys (mapcar 'char-to-string (number-sequence 65 (+ 65 (length project-hydras)))))
