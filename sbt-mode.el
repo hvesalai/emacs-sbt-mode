@@ -117,6 +117,12 @@ subsequent call to this function may provide additional input."
   ;; (sbt:paste-region (region-beginning) (region-end) arg)
   (sbt:paste-region (region-beginning) (region-end) nil))
 
+(defun sbt-send-eol ()
+  "Send newline to the sbt process for the primary purpose of
+interrupting triggered execution, such as ~compile."
+  (interactive)
+  (comint-send-string (current-buffer) "\n"))
+
 (defun sbt:clear (&optional buffer)
   "Clear (erase) the SBT buffer."
   (with-current-buffer (or buffer (sbt:buffer-name))
@@ -267,6 +273,7 @@ buffer called *sbt*projectdir."
     (set-keymap-parent map
                        (make-composed-keymap compilation-shell-minor-mode-map
                                              comint-mode-map))
+    (define-key map (kbd "C-c C-j") 'sbt-send-eol)
     (define-key map (kbd "TAB") 'sbt-completion-at-point)
     (define-key map (kbd "C-c C-v") 'sbt-clear)
 
