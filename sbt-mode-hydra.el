@@ -218,8 +218,8 @@ _c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ e
 (defun sbt-hydra-command:run-previous-sbt-command ()
   `((sbt-hydra:run-previous-sbt-command) nil))
 
-(defun sbt-hydra-command:run-test-only ()
-  `((sbt-hydra:run-test-only) nil))
+(defun sbt-hydra-command:run-test-only (project projects)
+  `((sbt-hydra:run-test-only ,project ',projects) nil))
 
 (defun sbt-hydra-command:edit-last-command ()
   `((sbt-hydra:edit-and-run-previous-sbt-command) nil))
@@ -352,7 +352,7 @@ x - clean        - reset substring (-- -z) to empty string
    (format "%s/testOnly -- -z \"%s\""
            (sbt-hydra:project-name-from-current-hydra) substring)))
 
-(defun sbt-hydra:run-test-only ()
+(defun sbt-hydra:run-test-only (current-project projects)
   (cond ((use-region-p)
          (sbt-hydra:run-test-with-substring (buffer-substring-no-properties (region-beginning) (region-end))))
         ((string-prefix-p sbt:buffer-name-base (buffer-name))
@@ -362,11 +362,11 @@ x - clean        - reset substring (-- -z) to empty string
              (message "Current line doesn't contain name of a test. It must start with a string \"[info] - \""))))
         (t
          (save-excursion
-           (let ((project (let* ((root (sbt:find-root))
+           (let ((project-folder (let* ((root (sbt:find-root))
                                  (buffer-name (buffer-file-name (current-buffer))) ;; not every buffer represents a file
                                  (path-from-root (when (and root buffer-name) (replace-regexp-in-string (concat ".*" (substring root 1)) "" buffer-name))))
                             (when (and path-from-root (string-match "^\\([[:word:]]*\\)/" path-from-root))
-                              (match-string-no-properties 1 path-from-root)))) ;; TODO this will work only for Multi-project .sbt build definition
+                              (match-string-no-properties 1 path-from-root))))
                  (substring (let ((line (thing-at-point 'line)))
                               (when (string-match "\"\\(.*\\)\" \\(in\\|should\\)" line)
                                 (replace-regexp-in-string "\"" "" (match-string-no-properties 1 line)))))
@@ -386,7 +386,9 @@ x - clean        - reset substring (-- -z) to empty string
                    (t
                     (sbt-hydra:run-sbt-command
                      (format "%s/testOnly %s.%s%s"
-                             project fqn file-name (concat "" (format " -- -z \"%s\"" substring)))))))))))
+                             (if (member project-folder projects)
+                                 project-folder
+                               current-project) fqn file-name (concat "" (format " -- -z \"%s\"" substring)))))))))))
 
 (defun sbt-hydra:eof ()
   (sbt-switch-to-active-sbt-buffer)
@@ -461,7 +463,7 @@ x - clean        - reset substring (-- -z) to empty string
                         (list (sbt-hydra-command:switch-to-sbt-buffer))
                         (list (sbt-hydra-command:reload))
                         (list (sbt-hydra-command:run-previous-sbt-command))
-                        (list (sbt-hydra-command:run-test-only))
+                        (list (sbt-hydra-command:run-test-only current-project projects))
                         (list (sbt-hydra-command:it-test current-project))
                         (list (sbt-hydra-command:edit-last-command))
                         (list (sbt-hydra-command:help))))
