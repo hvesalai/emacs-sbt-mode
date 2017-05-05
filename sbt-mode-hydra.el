@@ -31,9 +31,12 @@
 (defvar-local sbt-hydra:current-hydra nil)
 (defvar-local sbt-hydra:test-hydra-active nil)
 (defvar-local sbt-hydra:hydra-previous-command nil)
+(defvar-local sbt-hydra:last-command-run-play nil)
 (defvar-local sbt-hydra:sbt-output-cleared "")
 (defvar-local sbt-hydra:sbt-test-substring "")
 (defvar-local sbt-hydra:main-methods nil)
+(defvar-local sbt-hydra:jetty-projects nil)
+(defvar-local sbt-hydra:play-framework-projects nil)
 (defvar-local sbt-hydra:projects nil)               ;; dir-local
 (defvar-local sbt-hydra:command-line-arguments nil) ;; dir-local
 (defvar-local sbt-hydra:system-properties nil)      ;; dir-local
@@ -68,7 +71,7 @@
                                       (stringp (car project))
                                       (sbt-hydra:is-list-of-strings (cdr project)))) projects)))))
 
-(defcustom allowed-files-regexp '(".*.scala$" ".*/routes$")
+(defcustom allowed-files-regexp '(".*.scala$" ".*/routes$" ".*.html$")
   "Regexp to match files when save should run last sbt command"
   :type '(repeat string)
   :group 'sbt-hydra)
@@ -150,14 +153,16 @@ Sbt project it will create one."
            (message res))
           (t (message "Please wait! Sbt projects are loading. Sbt Hydra will be ready soon.")))))
 
+(defun sbt-hydra:send-newline ()
+  (comint-send-string (current-buffer) "\n"))
+
+(defun sbt-hydra:quit-running-play ()
+  (setq sbt-hydra:last-command-run-play nil)
+  (comint-send-eof))
+
 (defun sbt-hydra:send-eof-if-need ()
-  (when (and (stringp sbt-hydra:hydra-previous-command)
-             (not (eq (string-match "/run " sbt-hydra:hydra-previous-command) nil))
-             (save-excursion
-               (goto-char (point-max))
-               (beginning-of-line)
-               (not (eq 'comint-highlight-prompt (get-text-property (point) 'face)))))
-    (comint-send-eof)))
+  (when sbt-hydra:last-command-run-play
+    (sbt-hydra:quit-running-play)))
 
 (defun sbt-hydra:run-previous-command ()
   "Run last sbt command in active sbt buffer. If last command executed
@@ -269,7 +274,7 @@ Most action provided are scoped by active project. For example key 'c' will trig
 
 Available actions:
 
-A, B, C ...      - switch between project hydras, this part is generated dynamically on start by executing 'projects' command
+A, B, C ...      - switch between project hydras, this part is generated dynamically on start by executing 'plugins' command
                    in *sbt* buffer or it is populated by projects defined in `sbt-hydra:projects' Directory Local Variables
 
 q - quit         - close hydra
@@ -311,8 +316,15 @@ x - clean        - reset substring (-- -z) to empty string
           (display-buffer help #'display-buffer-pop-up-window))))))
 
 (defun sbt-hydra:run (project)
-  (let ((main-class (cdr (assq (intern project) sbt-hydra:main-methods))))
-    (cond ((eq nil main-class)
+  (let ((main-class (cdr (assq (intern project) sbt-hydra:main-methods)))
+        (is-play (member project sbt-hydra:play-framework-projects))
+        (is-jetty (member project sbt-hydra:jetty-projects)))
+    (cond (is-jetty
+           (sbt-hydra:run-run-project-command "jetty:start" project))
+          ((or main-class is-play) ;; play projects and simple projects are run in the same way
+           (sbt-hydra:run-run-project-command (format "run %s" (concat "" (cdr (assoc project sbt-hydra:command-line-arguments)))) project)
+           (when is-play (setq sbt-hydra:last-command-run-play t)))
+          ((eq nil main-class)
            (let ((cmd (format "show %s/mainClass" project)))
              (sbt-switch-to-active-sbt-buffer)
              (sbt-hydra:send-eof-if-need)
@@ -325,9 +337,7 @@ x - clean        - reset substring (-- -z) to empty string
            (message "Error when getting main class for project %s. Please try again." project)
            (setq sbt-hydra:main-methods (assq-delete-all (intern project) sbt-hydra:main-methods)))
           (t
-           (sbt-hydra:run-run-project-command
-            (format "run %s"
-                    (concat "" (cdr (assoc project sbt-hydra:command-line-arguments)))) project)))))
+           (message "Do not know how to run project %s." project)))))
 
 (defun sbt-hydra:run-sbt-command (command)
   (sbt-switch-to-active-sbt-buffer)
@@ -335,6 +345,9 @@ x - clean        - reset substring (-- -z) to empty string
 
 (defun sbt-hydra:run-previous-sbt-command ()
   (sbt-switch-to-active-sbt-buffer)
+  (cl-loop for play-project being the elements of sbt-hydra:play-framework-projects
+           if (string-match (format "%s/run" play-project) sbt-hydra:hydra-previous-command)
+           do (setq sbt-hydra:last-command-run-play t))
   (sbt:command sbt-hydra:hydra-previous-command))
 
 (defun sbt-hydra:edit-and-run-previous-sbt-command ()
@@ -393,10 +406,18 @@ x - clean        - reset substring (-- -z) to empty string
                                  project-folder
                                current-project) fqn file-name (concat "" (format " -- -z \"%s\"" substring)))))))))))
 
+(defun sbt-hydra:on-prompt ()
+  (save-excursion
+    (goto-char (point-max))
+    (beginning-of-line)
+    (eq 'comint-highlight-prompt (car (get-text-property (point) 'face)))))
+
 (defun sbt-hydra:eof ()
   (sbt-switch-to-active-sbt-buffer)
-  (setq sbt-hydra:hydra-previous-command "name") ;; allow eof and run command after each other
-  (comint-send-eof))
+  (if (and sbt-hydra:last-command-run-play
+           (not (sbt-hydra:on-prompt)))
+      (sbt-hydra:quit-running-play) ;; send oef only when in play project and last line of the buffer is not a prompt
+    (sbt-hydra:send-newline)))
 
 (defun sbt-hydra:test-only-hydra-on ()
   (if (functionp 'sbt-test-hydra/body)
@@ -535,8 +556,20 @@ x - clean        - reset substring (-- -z) to empty string
                                (format "%s -- -z \"%s\"" command sbt-hydra:sbt-test-substring))))
     (sbt-hydra:run-project-command command-with-params project)))
 
-(defconst sbt-project-regexp "^\\[info\\]\\W\\{5\\}\\(.*\\)$")
-(defconst sbt-main-class-regexp "^\\[info\\][[:space:]]+\\(Some([[:word:]\\|\\.]*)\\|None\\)$")
+(defun sbt-hydra:projects-info (sbt-output)
+  (let ((project-names (sbt-hydra:projects-for-plugin sbt-output "sbt.plugins.CorePlugin"))
+        (play-projects (sbt-hydra:projects-for-plugin sbt-output "play.sbt.Play"))
+        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output "com.earldouglas.xwp.JettyPlugin")))
+
+    (setq sbt-hydra:play-framework-projects play-projects)
+    (setq sbt-hydra:jetty-projects jetty-projects)
+
+    project-names))
+
+(defun sbt-hydra:projects-for-plugin (sbt-output plugin)
+  (if (string-match (format "^[[:space:]]*%s: enabled in \\(.*\\)$" plugin) sbt-output)
+      (split-string (match-string 1 sbt-output) "," t " ")
+    nil))
 
 (defun sbt-hydra:create-hydra ()
   "Create hydras for current scala project. It will create one hydra for every sbt project.
@@ -556,8 +589,8 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
                 (hack-dir-local-variables-non-file-buffer)
                 (if sbt-hydra:projects
                     (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
-                  (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects)
-                  (sbt:command "projects")))
+                  (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info)
+                  (sbt:command "plugins")))
             (let ((sbt:clear-buffer-before-command nil))
               ;; New sbt buffer
               (sbt:run-sbt)
@@ -565,24 +598,24 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
               (hack-dir-local-variables-non-file-buffer)
               (if sbt-hydra:projects
                   (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
-                (sbt:command "projects")
-                (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects-skip-init))))))
+                (sbt:command "plugins")
+                (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init))))))
     "Not in sbt project. Hydra can be generated only from sbt project. See `sbt:find-root' to get more informations."))
 
 (defun sbt-hydra:parse-main-class (sbt-output)
   (sbt-hydra:parse-sbt-output sbt-output 'sbt-hydra:get-main-class 'sbt-hydra:parse-main-class))
 
-(defun sbt-hydra:parse-projects (sbt-output)
-  (sbt-hydra:parse-sbt-output sbt-output 'sbt-hydra:get-projects 'sbt-hydra:parse-projects))
+(defun sbt-hydra:parse-plugins-info (sbt-output)
+  (sbt-hydra:parse-sbt-output sbt-output 'sbt-hydra:generate-hydras-from-plugins-info 'sbt-hydra:parse-plugins-info))
 
-(defun sbt-hydra:parse-projects-skip-init (sbt-output)
+(defun sbt-hydra:parse-plugins-info-skip-init (sbt-output)
   (sbt-hydra:parse-sbt-output-skip-init sbt-output))
 
 (defun sbt-hydra:parse-sbt-output-skip-init (sbt-output)
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
     (when (string-match sbt:prompt-regexp output-cleared)
-      (remove-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects-skip-init)
-      (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-projects))))
+      (remove-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init)
+      (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info))))
 
 (defun sbt-hydra:parse-sbt-output (sbt-output f hook)
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
@@ -595,10 +628,10 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
       (funcall f sbt-hydra:sbt-output-cleared)
       (setq sbt-hydra:sbt-output-cleared ""))))
 
-(defun sbt-hydra:find-main-class-matches (sbt-output)
+(defun sbt-hydra:match-regex-in-sbt-output (sbt-output regexp)
   (let ((start-index 0)
         matches)
-    (while (not (eq nil (let ((index (string-match sbt-main-class-regexp sbt-output start-index))
+    (while (not (eq nil (let ((index (string-match regexp sbt-output start-index))
                               (result (match-string 1 sbt-output)))
                           (when index
                             (setq start-index (1+ index))
@@ -606,8 +639,26 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
                           index))))
     matches))
 
+(defconst sbt-main-class-regexp "^\\[info\\][[:space:]]+\\(Some([[:word:]\\|\\.]*)\\|None\\)$")
+
 (defun sbt-hydra:get-main-class-for-project (sbt-output project)
-  (let ((matches (sbt-hydra:find-main-class-matches sbt-output)))
+  ;;Example `sbt-output' in simple project:
+  ;;[info] Some(play.core.server.ProdServerStart)
+  ;;[success] Total time: 1 s, completed May 5, 2017 11:07:59 AM
+  ;;>
+  ;;As a result `matches' size will be 1.
+  ;;
+  ;;Example `sbt-output' in project which aggregates other projects:
+  ;;[info] core/compile:mainClass
+  ;;[info] 	Some(play.core.server.ProdServerStart)
+  ;;[info] kernel/compile:mainClass
+  ;;[info] 	Some(play.core.server.ProdServerStart)
+  ;;[info] root/compile:mainClass
+  ;;[info] 	None
+  ;;[success] Total time: 1 s, completed May 5, 2017 9:56:36 AM
+  ;;>
+  ;;As a result `matches' size will be 3.
+  (let ((matches (sbt-hydra:match-regex-in-sbt-output sbt-output sbt-main-class-regexp)))
     (pcase (length matches)
       (0 nil)
       (1 (car matches))
@@ -627,15 +678,8 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (sbt-hydra:run-current-hydra)
   (message "Success hydra for projects %s created." projects))
 
-(defun sbt-hydra:get-projects (sbt-output)
-  (let* ((output-lines (split-string sbt-output "[\n]+" t))
-         (projects-names
-          (remove nil
-                  (mapcar (lambda (output-line)
-                            (when (string-match sbt-project-regexp output-line)
-                              (match-string 1 output-line)))
-                          output-lines))))
-    (sbt-hydra:generate-hydras-from-projects projects-names)))
+(defun sbt-hydra:generate-hydras-from-plugins-info (sbt-output)
+  (sbt-hydra:generate-hydras-from-projects (sbt-hydra:projects-info sbt-output)))
 
 (defun sbt-test-hydra-command:test-only (project failing-test)
   `((sbt-test-hydra:test-only ,(format "test:testOnly %s" failing-test), project) ,(format "%s - %s" project failing-test)))
