@@ -14,8 +14,10 @@
 ;; By adding this `before-save-hook' hook to your init file:
 ;; (add-hook 'sbt-mode-hook (lambda ()
 ;;                            (add-hook 'before-save-hook 'sbt-hydra:check-modified-buffers)))
-;; sbt will repeat (execute) last command on a save of a last modified buffer whose name match
-;; one of `allowed-files-regexp'.
+;; sbt will repeat (execute) last command on a save of a last modified buffer whose file-name match
+;; one of `allowed-files-regexp'. This is supposed to be used with `save-some-buffers' command in case
+;; multiple source files are edited. In case only one source file is edited `save-buffer' command
+;; will work as well.
 ;;
 ;;; Code:
 
@@ -66,7 +68,7 @@
                                       (stringp (car project))
                                       (sbt-hydra:is-list-of-strings (cdr project)))) projects)))))
 
-(defcustom allowed-files-regexp '(".*.scala$" "^routes$")
+(defcustom allowed-files-regexp '(".*.scala$" ".*/routes$")
   "Regexp to match files when save should run last sbt command"
   :type '(repeat string)
   :group 'sbt-hydra)
@@ -96,7 +98,8 @@ to run in `after-save-hook' which will run last sbt command in sbt buffer."
     (dolist (buffer (buffer-list))
       (with-current-buffer buffer
         (cl-loop for allowed-file-regexp being the elements of allowed-files-regexp
-                 if (and (string-match allowed-file-regexp (buffer-name))
+                 if (and (buffer-file-name) ;;  If `buffer' is not visiting any file, `buffer-file-name' returns nil
+                         (string-match allowed-file-regexp (buffer-file-name))
                          (buffer-modified-p))
                  do (push (buffer-name) buffers-to-save))))
     (when (eq 1 (length buffers-to-save))
