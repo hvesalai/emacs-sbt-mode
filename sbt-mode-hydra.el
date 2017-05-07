@@ -341,7 +341,8 @@ x - clean        - reset substring (-- -z) to empty string
 
 (defun sbt-hydra:run-sbt-command (command)
   (sbt-switch-to-active-sbt-buffer)
-  (sbt:command command))
+  (setq sbt-hydra:hydra-previous-command command)
+  (sbt-hydra:run-previous-sbt-command))
 
 (defun sbt-hydra:run-previous-sbt-command ()
   (sbt-switch-to-active-sbt-buffer)
@@ -352,7 +353,7 @@ x - clean        - reset substring (-- -z) to empty string
 
 (defun sbt-hydra:edit-and-run-previous-sbt-command ()
   (sbt-switch-to-active-sbt-buffer)
-  (sbt:command (read-from-minibuffer "Edit sbt command: " sbt-hydra:hydra-previous-command)))
+  (sbt-hydra:run-sbt-command (read-from-minibuffer "Edit sbt command: " sbt-hydra:hydra-previous-command)))
 
 (defun sbt-hydra:should-text-from-sbt-output ()
   (let ((current-line (thing-at-point 'line)))
