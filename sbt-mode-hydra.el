@@ -30,7 +30,7 @@
 
 (defvar-local sbt-hydra:current-hydra nil)
 (defvar-local sbt-hydra:test-hydra-active nil)
-(defvar-local sbt-hydra:hydra-previous-command nil)
+(defvar-local sbt-hydra:hydra-previous-commands nil)
 (defvar-local sbt-hydra:last-command-run-play nil)
 (defvar-local sbt-hydra:sbt-output-cleared "")
 (defvar-local sbt-hydra:sbt-test-substring "")
@@ -192,8 +192,8 @@ _q_ quit _o_ back _u_ testOnly _x_ clean -- -z %`sbt-hydra:sbt-test-substring
      `(defhydra ,name (:color red)
         ,(format "
 %s
-^-^----------^-^--------------^-^-------^-^---------^-^---------^-^--------^-^------^-^----------
-_q_ quit     _o_ testHydra    _p_ parse _u_ testOnly _a_ repeat _n_ no-op  _i_ edit _s_ sbt-shell
+^-^----------^-^--------------^-^-------^-^---------^-^---------^-^--------^-^------^-^-----------^-^--------
+_q_ quit     _o_ testHydra    _p_ parse _u_ testOnly _a_ repeat _n_ no-op  _i_ edit _s_ sbt-shell _v_ history
 _c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ eof  _h_ help
 " switcher)
         ,@heads)))
@@ -253,6 +253,11 @@ _c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ e
 (defun sbt-hydra-command:help ()
   `((sbt-hydra:help) nil))
 
+(defun sbt-hydra-command:history ()
+  `((lambda ()
+      (interactive)
+      (sbt-hydra:history current-prefix-arg)) nil))
+
 (defun sbt-hydra:help ()
   (let ((name "*SBT-Hydra Help*"))
     (if (get-buffer name)
@@ -297,6 +302,9 @@ o - testHydra    - switch to special hydra which is created by 'parse' action. M
 u - testOnly     - run 'testOnly' command for active project with substring parameter (-- -z) containing text from the line point
                    is at. Works in Sbt buffer or Scala source file, but point must be at line contaning should text of the test.
 f - it:test      - execute 'it:test' command for active project
+v - history      - displays commands history for effective execution of old commands.
+                   When hydra is executed with one prefix argument C-u invoking history command allows to remove selected command.
+                   When hydra is executed with tow or more prefix arguments C-u invoking history command will clear the history.
 
 *** Test Hydra ***
 
@@ -329,7 +337,6 @@ x - clean        - reset substring (-- -z) to empty string
              (sbt-switch-to-active-sbt-buffer)
              (sbt-hydra:send-eof-if-need)
              (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-main-class)
-             (setq sbt-hydra:hydra-previous-command cmd)
              (sbt:command cmd)))
           ((equal "None" main-class)
            (message "No main class for project %s" project))
@@ -339,21 +346,54 @@ x - clean        - reset substring (-- -z) to empty string
           (t
            (message "Do not know how to run project %s." project)))))
 
+(defun sbt-hydra:previous-command-play-run (play-project)
+  (string-match (format "%s/run" play-project) (car sbt-hydra:hydra-previous-commands)))
+
+(defun sbt-hydra:read-from-history ()
+  (cond ((fboundp 'ivy-read)
+         (ivy-read "History: " sbt-hydra:hydra-previous-commands))
+        ((fboundp 'ido-completing-read)
+         (ido-completing-read "History: " sbt-hydra:hydra-previous-commands))
+        (t
+         (completing-read "History (hit TAB to auto-complete): " sbt-hydra:hydra-previous-commands nil t))))
+
+(defun sbt-hydra:history (current-prefix-arg)
+  (pcase current-prefix-arg
+    (`nil
+     (let ((play-run (cl-loop for play-project being the elements of sbt-hydra:play-framework-projects
+                              thereis (sbt-hydra:previous-command-play-run play-project)))
+           (cmd (sbt-hydra:read-from-history)))
+       (when play-run (sbt-hydra:eof))
+       (sbt-hydra:run-sbt-command cmd)))
+    (`(,n . nil)
+     (setq sbt-hydra:hydra-previous-commands
+           (if (>= 4 n)
+               (let ((sbt-command (sbt-hydra:read-from-history)))
+                 (message "Sbt command '%s' was removed from history." sbt-command)
+                 (delete sbt-command sbt-hydra:hydra-previous-commands))
+             (progn
+               (message "Sbt commands history was cleared.")
+               nil))))))
+
+(defun sbt-hydra:add-to-history (command)
+  (push command sbt-hydra:hydra-previous-commands)
+  (delete-dups sbt-hydra:hydra-previous-commands))
+
 (defun sbt-hydra:run-sbt-command (command)
   (sbt-switch-to-active-sbt-buffer)
-  (setq sbt-hydra:hydra-previous-command command)
+  (sbt-hydra:add-to-history command)
   (sbt-hydra:run-previous-sbt-command))
 
 (defun sbt-hydra:run-previous-sbt-command ()
   (sbt-switch-to-active-sbt-buffer)
   (cl-loop for play-project being the elements of sbt-hydra:play-framework-projects
-           if (string-match (format "%s/run" play-project) sbt-hydra:hydra-previous-command)
+           if (sbt-hydra:previous-command-play-run play-project)
            do (setq sbt-hydra:last-command-run-play t))
-  (sbt:command sbt-hydra:hydra-previous-command))
+  (sbt:command (car sbt-hydra:hydra-previous-commands)))
 
 (defun sbt-hydra:edit-and-run-previous-sbt-command ()
   (sbt-switch-to-active-sbt-buffer)
-  (sbt-hydra:run-sbt-command (read-from-minibuffer "Edit sbt command: " sbt-hydra:hydra-previous-command)))
+  (sbt-hydra:run-sbt-command (read-from-minibuffer "Edit sbt command: " (car sbt-hydra:hydra-previous-commands))))
 
 (defun sbt-hydra:should-text-from-sbt-output ()
   (let ((current-line (thing-at-point 'line)))
@@ -491,8 +531,9 @@ x - clean        - reset substring (-- -z) to empty string
                         (list (sbt-hydra-command:run-test-only current-project projects))
                         (list (sbt-hydra-command:it-test current-project))
                         (list (sbt-hydra-command:edit-last-command))
-                        (list (sbt-hydra-command:help))))
-         (keys '("l" "c" "t" "r" "y" "e" "q" "n" "p" "o" "s" "d" "a" "u" "f" "i" "h"))
+                        (list (sbt-hydra-command:help))
+                        (list (sbt-hydra-command:history))))
+         (keys '("l" "c" "t" "r" "y" "e" "q" "n" "p" "o" "s" "d" "a" "u" "f" "i" "h" "v"))
          (sbt-commands (cl-mapcar 'sbt-hydra:add-command-key keys sbt-commands))
          (project-hydras (mapcar 'sbt-hydra:switch-hydra projects))
          (project-keys (mapcar 'char-to-string (number-sequence 65 (+ 65 (length project-hydras)))))
@@ -516,7 +557,7 @@ x - clean        - reset substring (-- -z) to empty string
   (sbt-switch-to-active-sbt-buffer)
   (sbt-hydra:send-eof-if-need)
   (let ((cmd (format "%s/%s" project command)))
-    (setq sbt-hydra:hydra-previous-command cmd)
+    (sbt-hydra:add-to-history cmd)
     (let ((system-properties (sbt-hydra:get-system-properties project)))
       (when system-properties
         (sbt:command system-properties)))
@@ -526,7 +567,7 @@ x - clean        - reset substring (-- -z) to empty string
   (sbt-switch-to-active-sbt-buffer)
   (sbt-hydra:send-eof-if-need)
   (let ((cmd (format "%s/%s" project command)))
-    (setq sbt-hydra:hydra-previous-command cmd)
+    (sbt-hydra:add-to-history cmd)
     (sbt:command cmd)))
 
 (defun sbt-hydra:get-text-at-point ()
