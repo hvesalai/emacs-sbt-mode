@@ -358,6 +358,7 @@ x - clean        - reset substring (-- -z) to empty string
          (completing-read "History (hit TAB to auto-complete): " sbt-hydra:hydra-previous-commands nil t))))
 
 (defun sbt-hydra:history (current-prefix-arg)
+  (sbt-switch-to-active-sbt-buffer)
   (pcase current-prefix-arg
     (`nil
      (let ((play-run (cl-loop for play-project being the elements of sbt-hydra:play-framework-projects
