@@ -36,6 +36,7 @@
 (defvar-local sbt-hydra:sbt-test-substring "")
 (defvar-local sbt-hydra:main-methods nil)
 (defvar-local sbt-hydra:jetty-projects nil)
+(defvar-local sbt-hydra:revolver-projects nil)
 (defvar-local sbt-hydra:play-framework-projects nil)
 (defvar-local sbt-hydra:projects nil)               ;; dir-local
 (defvar-local sbt-hydra:command-line-arguments nil) ;; dir-local
@@ -326,9 +327,12 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:run (project)
   (let ((main-class (cdr (assq (intern project) sbt-hydra:main-methods)))
         (is-play (member project sbt-hydra:play-framework-projects))
-        (is-jetty (member project sbt-hydra:jetty-projects)))
+        (is-jetty (member project sbt-hydra:jetty-projects))
+        (is-revolver (member project sbt-hydra:revolver-projects)))
     (cond (is-jetty
            (sbt-hydra:run-run-project-command "jetty:start" project))
+          (is-revolver
+           (sbt-hydra:run-run-project-command "reStart" project))
           ((or main-class is-play) ;; play projects and simple projects are run in the same way
            (sbt-hydra:run-run-project-command (format "run %s" (concat "" (cdr (assoc project sbt-hydra:command-line-arguments)))) project)
            (when is-play (setq sbt-hydra:last-command-run-play t)))
@@ -549,10 +553,12 @@ x - clean        - reset substring (-- -z) to empty string
     (mapcar 'eval hydras)))
 
 (defun sbt-hydra:get-system-properties (project)
-  (let ((system-properties (cdr (assoc project sbt-hydra:system-properties))))
-    (when system-properties (format "set fork in %s := true\nset javaOptions in (%s, run) := Seq(%s)" project project
-                                    (mapconcat (lambda (system-property)
-                                                 (format "\"%s\"" system-property)) system-properties ",")))))
+  (let ((system-properties (cdr (assoc project sbt-hydra:system-properties)))
+        (run-command (if (member project sbt-hydra:revolver-projects) "reStart" "run")))
+    (when system-properties
+      (format "set fork in LocalProject(\"%s\") := true\nset javaOptions in (LocalProject(\"%s\"), %s) := Seq(%s)" project project run-command
+              (mapconcat (lambda (system-property)
+                           (format "\"%s\"" system-property)) system-properties ",")))))
 
 (defun sbt-hydra:run-run-project-command (command project)
   (sbt-switch-to-active-sbt-buffer)
@@ -602,10 +608,12 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:projects-info (sbt-output)
   (let ((project-names (sbt-hydra:projects-for-plugin sbt-output "sbt.plugins.CorePlugin"))
         (play-projects (sbt-hydra:projects-for-plugin sbt-output "play.sbt.Play"))
-        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output "com.earldouglas.xwp.JettyPlugin")))
+        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output "com.earldouglas.xwp.JettyPlugin"))
+        (revolver-projects (sbt-hydra:projects-for-plugin sbt-output "spray.revolver.RevolverPlugin")))
 
     (setq sbt-hydra:play-framework-projects play-projects)
     (setq sbt-hydra:jetty-projects jetty-projects)
+    (setq sbt-hydra:revolver-projects revolver-projects)
 
     project-names))
 
