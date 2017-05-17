@@ -36,6 +36,7 @@
 (defvar-local sbt-hydra:sbt-test-substring "")
 (defvar-local sbt-hydra:main-methods nil)
 (defvar-local sbt-hydra:jetty-projects nil)
+(defvar-local sbt-hydra:revolver-projects nil)
 (defvar-local sbt-hydra:play-framework-projects nil)
 (defvar-local sbt-hydra:projects nil)               ;; dir-local
 (defvar-local sbt-hydra:command-line-arguments nil) ;; dir-local
@@ -326,9 +327,12 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:run (project)
   (let ((main-class (cdr (assq (intern project) sbt-hydra:main-methods)))
         (is-play (member project sbt-hydra:play-framework-projects))
-        (is-jetty (member project sbt-hydra:jetty-projects)))
+        (is-jetty (member project sbt-hydra:jetty-projects))
+        (is-revolver (member project sbt-hydra:revolver-projects)))
     (cond (is-jetty
            (sbt-hydra:run-run-project-command "jetty:start" project))
+          (is-revolver
+           (sbt-hydra:run-run-project-command "reStart" project))
           ((or main-class is-play) ;; play projects and simple projects are run in the same way
            (sbt-hydra:run-run-project-command (format "run %s" (concat "" (cdr (assoc project sbt-hydra:command-line-arguments)))) project)
            (when is-play (setq sbt-hydra:last-command-run-play t)))
@@ -549,10 +553,12 @@ x - clean        - reset substring (-- -z) to empty string
     (mapcar 'eval hydras)))
 
 (defun sbt-hydra:get-system-properties (project)
-  (let ((system-properties (cdr (assoc project sbt-hydra:system-properties))))
-    (when system-properties (format "set fork in %s := true\nset javaOptions in (%s, run) := Seq(%s)" project project
-                                    (mapconcat (lambda (system-property)
-                                                 (format "\"%s\"" system-property)) system-properties ",")))))
+  (let ((system-properties (cdr (assoc project sbt-hydra:system-properties)))
+        (run-command (if (member project sbt-hydra:revolver-projects) "reStart" "run")))
+    (when system-properties
+      (format "set fork in LocalProject(\"%s\") := true\nset javaOptions in (LocalProject(\"%s\"), %s) := Seq(%s)" project project run-command
+              (mapconcat (lambda (system-property)
+                           (format "\"%s\"" system-property)) system-properties ",")))))
 
 (defun sbt-hydra:run-run-project-command (command project)
   (sbt-switch-to-active-sbt-buffer)
@@ -602,12 +608,16 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:projects-info (sbt-output)
   (let ((project-names (sbt-hydra:projects-for-plugin sbt-output "sbt.plugins.CorePlugin"))
         (play-projects (sbt-hydra:projects-for-plugin sbt-output "play.sbt.Play"))
-        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output "com.earldouglas.xwp.JettyPlugin")))
+        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output "com.earldouglas.xwp.JettyPlugin"))
+        (revolver-projects (sbt-hydra:projects-for-plugin sbt-output "spray.revolver.RevolverPlugin")))
 
     (setq sbt-hydra:play-framework-projects play-projects)
     (setq sbt-hydra:jetty-projects jetty-projects)
+    (setq sbt-hydra:revolver-projects revolver-projects)
 
-    project-names))
+    (if sbt-hydra:projects
+        sbt-hydra:projects
+      project-names)))
 
 (defun sbt-hydra:projects-for-plugin (sbt-output plugin)
   (if (string-match (format "^[[:space:]]*%s: enabled in \\(.*\\)$" plugin) sbt-output)
@@ -617,7 +627,7 @@ x - clean        - reset substring (-- -z) to empty string
 (defun sbt-hydra:create-hydra ()
   "Create hydras for current scala project. It will create one hydra for every sbt project.
 List of sbt projects is determined in two ways:
- - automatically by running `projects' command in sbt shell which will provide list all available projects.
+ - automatically by running `plugins' command in sbt shell which will provide list of all plugins and projects they are enabled in.
  - by specifying projects in a `dir-locals-file'. This will provide option to specify only subset of all projects available in sbt build.
 The easiest way to use second option is by running `add-dir-local-variable' command while in sbt buffer:
    M-x add-dir-local-variable RET sbt-mode RET sbt-hydra:projects RET (\"proj1\" \"proj2\")"
@@ -630,19 +640,15 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
               (progn
                 ;; Existing sbt buffer
                 (hack-dir-local-variables-non-file-buffer)
-                (if sbt-hydra:projects
-                    (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
-                  (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info)
-                  (sbt:command "plugins")))
+                (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info)
+                (sbt:command "plugins"))
             (let ((sbt:clear-buffer-before-command nil))
               ;; New sbt buffer
               (sbt:run-sbt)
               (sbt-switch-to-active-sbt-buffer)
               (hack-dir-local-variables-non-file-buffer)
-              (if sbt-hydra:projects
-                  (sbt-hydra:generate-hydras-from-projects sbt-hydra:projects)
-                (sbt:command "plugins")
-                (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init))))))
+              (sbt:command "plugins")
+              (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init)))))
     "Not in sbt project. Hydra can be generated only from sbt project. See `sbt:find-root' to get more informations."))
 
 (defun sbt-hydra:parse-main-class (sbt-output)
