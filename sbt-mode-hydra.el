@@ -77,6 +77,11 @@
   :type '(repeat string)
   :group 'sbt-hydra)
 
+(defcustom history-file ".sbt-hydra-history"
+  "Name of the file to save sbt command history. If set to `nil' do not write sbt commands history into file."
+  :type 'string
+  :group 'sbt-hydra)
+
 (defgroup sbt-hydra nil
   "Hydra for sbt."
   :group 'sbt-hydra
@@ -375,14 +380,42 @@ x - clean        - reset substring (-- -z) to empty string
            (if (>= 4 n)
                (let ((sbt-command (sbt-hydra:read-from-history)))
                  (message "Sbt command '%s' was removed from history." sbt-command)
-                 (delete sbt-command sbt-hydra:hydra-previous-commands))
+                 (delete sbt-command sbt-hydra:hydra-previous-commands)
+                 (sbt-hydra:save-history))
              (progn
                (message "Sbt commands history was cleared.")
                nil))))))
 
 (defun sbt-hydra:add-to-history (command)
   (push command sbt-hydra:hydra-previous-commands)
-  (delete-dups sbt-hydra:hydra-previous-commands))
+  (delete-dups sbt-hydra:hydra-previous-commands)
+  (sbt-hydra:save-history))
+
+(defun sbt-hydra:save-history ()
+  "Save sbt commands history.
+Write data into the file specified by `history-file'."
+  (when history-file
+    (condition-case error
+        (progn (sbt-switch-to-active-sbt-buffer)
+               (let ((previous-commands (symbol-value 'sbt-hydra:hydra-previous-commands))
+                     (root (sbt:find-root)))
+                 (with-temp-buffer
+                   (erase-buffer)
+                   (set-buffer-file-coding-system 'utf-8-emacs)
+                   (insert (format "(setq %S '%S)" 'sbt-hydra:hydra-previous-commands previous-commands))
+                   (write-file (expand-file-name (format "%s/%s" root history-file))))))
+      (error
+       (warn "sbt-hydra mode: %s" (error-message-string error))))))
+
+(defun sbt-hydra:load-history ()
+  "Load a previously saved sbt commands history.
+Read data from the file specified by `history-file'."
+  (when history-file
+    (sbt-switch-to-active-sbt-buffer)
+    (let* ((root (sbt:find-root))
+           (file (expand-file-name (format "%s/%s" root history-file))))
+      (when (file-readable-p file)
+        (load-file file)))))
 
 (defun sbt-hydra:run-sbt-command (command)
   (sbt-switch-to-active-sbt-buffer)
@@ -725,6 +758,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 (defun sbt-hydra:generate-hydras-from-projects (projects)
   (sbt-hydra:generate-hydras projects)
   (sbt-hydra:run-current-hydra)
+  (sbt-hydra:load-history)
   (message "Success hydra for projects %s created." projects))
 
 (defun sbt-hydra:generate-hydras-from-plugins-info (sbt-output)
