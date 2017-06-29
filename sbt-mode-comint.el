@@ -184,14 +184,14 @@ what `sbt:move-marker-before-prompt-filter` did."
 (defun sbt:scala-escape-string (str)
   (mapconcat 'sbt:scala-escape-char str ""))
 
-(defconst sbt:completions-regex "^\\[completions\\] \\(.*\\)?$")
+(defconst sbt:completions-regex "^\\[completions\\] \\(.*\\)
+?$")
 (defconst sbt:repl-completions-string
   ;; waiting for better times... maybe some day we will have a completions command in
   ;; the scala-console
   (concat "{ val input = \"$1\"; "
           "val completer = new scala.tools.nsc.interpreter.JLineCompletion($intp).completer; "
-          "val completions = completer.complete(input, input.length); "
-          "val prefix = input.substring(0, completions.cursor); "
+          "val completions = completer.complete(input, input.length); "          
           "completions.candidates.foreach(c => println(\"[completions] \" + c))} // completions")
   "A command to send to scala console to get completions for $1 (an escaped string).")
 
