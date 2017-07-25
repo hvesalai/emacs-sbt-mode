@@ -3,6 +3,7 @@
 ;; Copyright(c) 2013 Heikki Vesalainen
 ;; For information on the License, see the LICENSE file
 
+(require 'ansi-color)
 (require 'cl-lib)
 (require 'comint)
 (require 'sbt-mode-vars)
@@ -46,7 +47,7 @@ as the comint-input-ring on console start-up"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:ansi-support 'filter
+(defcustom sbt:ansi-support t
   "See `ansi-color-for-comint-mode' in `ansi-color.el'"
   :type '(choice (const :tag "Do nothing" nil)
                  (const :tag "Filter" filter)

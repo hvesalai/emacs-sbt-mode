@@ -175,6 +175,8 @@ buffer called *sbt*projectdir."
   (let* ((project-root (or (sbt:find-root)
 			   (error "Could not find project root, type `C-h f sbt:find-root` for help.")))
          (buffer-name (sbt:buffer-name))
+         ;; WORKAROUND https://github.com/jline/jline2/pull/285
+         (process-environment (append '("EMACS=true") process-environment))
          (inhibit-read-only 1))
     ;; (when (null project-root)
     ;;   (error "Could not find project root, type `C-h f sbt:find-root` for help."))
@@ -228,45 +230,15 @@ buffer called *sbt*projectdir."
    '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
   (setq-local
    compilation-error-regexp-alist
-   '(("^\\[error][[:space:]]\\[[[:digit:]]+][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 2 1)
+   '(;; scalac output
+     ("^\\[error][[:space:]]\\[[[:digit:]]+][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 2 1)
      ("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 2 1)
      ("^\\[warn][[:space:]][[:space:]]\\[[[:digit:]]+][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 1 1)
      ("^\\[warn][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 1 1)
      ("^\\[info][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 0 1)
-     ;; this is tricky without negative lookahead, we're trying to avoid matching stacktraces
-     ;; but end up not matching scalatest messages that begin with `a'
-     ;; https://github.com/scalatest/scalatest/issues/630#issuecomment-223758829
+     ;; failing scalatests
      ("^\\[info][[:space:]]+\\(.*\\) (\\([^:[:space:]]+\\):\\([[:digit:]]+\\))" 2 3 nil 2 1)))
-  (setq-local
-   compilation-mode-font-lock-keywords
-   '(("^\\[error] \\(Failed: Total .*\\)"
-      (1 sbt:error-face))
-     ("^\\[info] \\(Passed: Total [0-9]+, Failed 0, Errors 0, Passed [0-9]+\\)\\(\\(?:, Skipped [0-9]*\\)?\\)"
-      ;; rxt-toggle-elisp-rx doesn't like this one...
-      (1 sbt:info-face)
-      (2 sbt:warning-face))
-     ("^\\[info] \\(Passed: Total [0-9]+, Failed [0-9]+, Errors [0-9]+.*\\)"
-      (1 sbt:error-face))
-     ("^\\[info] \\(Passed: Total [0-9]+, Failed [0-9]+.*\\)"
-      (1 sbt:error-face))
-     ("^\\[info] \\([0-9]+ examples?, 0 failure, 0 error\\)"
-      (1 sbt:info-face))
-     ("^\\[info] \\([0-9]+ examples?, [0-9]+ failure, [0-9]+ error\\)"
-      (1 sbt:error-face))
-     ("^\\[info][[:space:]]+\\(java.lang.AssertionError.*\\)"
-      (1 sbt:error-face))
-     ("^\\[info].*\\(\\*\\*\\* FAILED \\*\\*\\*\\)"
-      (1 sbt:error-face))
-     ("^\\[info].*\\(!!! IGNORED !!!\\)"
-      (1 sbt:warning-face))
-     ("^\\[info][[:space:]]-[[:space:]]\\(should.*\\)"
-      (1 sbt:info-face))
-     ("^\\[\\(error\\)]"
-      (1 sbt:error-face))
-     ("^\\[\\(warn\\)]"
-      (1 sbt:warning-face))
-     ("^\\[\\(success\\)]"
-      (1 sbt:info-face))))
+  (setq-local compilation-mode-font-lock-keywords nil)
   (compilation-setup t))
 
 (defvar sbt:mode-map
