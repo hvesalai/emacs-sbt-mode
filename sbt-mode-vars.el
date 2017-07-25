@@ -14,7 +14,9 @@
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:program-options nil
+(defcustom sbt:program-options
+  (when (eql system-type 'windows-nt)
+    '("-Djline.terminal=jline.UnsupportedTerminal"))
   "Options passed to sbt by the `sbt:run-sbt' command."
   :type '(repeat string)
   :group 'sbt)
