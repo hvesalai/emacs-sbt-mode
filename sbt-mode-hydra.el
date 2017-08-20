@@ -15,7 +15,7 @@
 ;; (add-hook 'sbt-mode-hook (lambda ()
 ;;                            (add-hook 'before-save-hook 'sbt-hydra:check-modified-buffers)))
 ;; sbt will repeat (execute) last command on a save of a last modified buffer whose file-name match
-;; one of `allowed-files-regexp'. This is supposed to be used with `save-some-buffers' command in case
+;; one of `sbt-hydra:allowed-files-regexp'. This is supposed to be used with `save-some-buffers' command in case
 ;; multiple source files are edited. In case only one source file is edited `save-buffer' command
 ;; will work as well.
 ;;
@@ -72,12 +72,12 @@
                                       (stringp (car project))
                                       (sbt-hydra:is-list-of-strings (cdr project)))) projects)))))
 
-(defcustom allowed-files-regexp '(".*.scala$" ".*/routes$" ".*.html$")
+(defcustom sbt-hydra:allowed-files-regexp '(".*.scala$" ".*/routes$" ".*.html$")
   "Regexp to match files when save should run last sbt command"
   :type '(repeat string)
   :group 'sbt-hydra)
 
-(defcustom history-file ".sbt-hydra-history"
+(defcustom sbt-hydra:history-file ".sbt-hydra-history"
   "Name of the file to save sbt command history. If set to `nil' do not write sbt commands history into file."
   :type 'string
   :group 'sbt-hydra)
@@ -100,13 +100,13 @@
                             (stringp item)) list))))
 
 (defun sbt-hydra:check-modified-buffers ()
-  "Check modified buffers matching `allowed-files-regexp' regexps
+  "Check modified buffers matching `sbt-hydra:allowed-files-regexp' regexps
 If there is only one modified buffer then add `sbt-hydra:run-previous-command'
 to run in `after-save-hook' which will run last sbt command in sbt buffer."
   (let (buffers-to-save)
     (dolist (buffer (buffer-list))
       (with-current-buffer buffer
-        (cl-loop for allowed-file-regexp being the elements of allowed-files-regexp
+        (cl-loop for allowed-file-regexp being the elements of sbt-hydra:allowed-files-regexp
                  if (and (buffer-file-name) ;;  If `buffer' is not visiting any file, `buffer-file-name' returns nil
                          (string-match allowed-file-regexp (buffer-file-name))
                          (buffer-modified-p))
@@ -393,8 +393,8 @@ x - clean        - reset substring (-- -z) to empty string
 
 (defun sbt-hydra:save-history ()
   "Save sbt commands history.
-Write data into the file specified by `history-file'."
-  (when history-file
+Write data into the file specified by `sbt-hydra:history-file'."
+  (when sbt-hydra:history-file
     (condition-case error
         (progn (sbt-switch-to-active-sbt-buffer)
                (let ((previous-commands (symbol-value 'sbt-hydra:hydra-previous-commands))
@@ -403,17 +403,17 @@ Write data into the file specified by `history-file'."
                    (erase-buffer)
                    (set-buffer-file-coding-system 'utf-8-emacs)
                    (insert (format "(setq %S '%S)" 'sbt-hydra:hydra-previous-commands previous-commands))
-                   (write-file (expand-file-name (format "%s/%s" root history-file))))))
+                   (write-file (expand-file-name (format "%s/%s" root sbt-hydra:history-file))))))
       (error
        (warn "sbt-hydra mode: %s" (error-message-string error))))))
 
 (defun sbt-hydra:load-history ()
   "Load a previously saved sbt commands history.
-Read data from the file specified by `history-file'."
-  (when history-file
+Read data from the file specified by `sbt-hydra:history-file'."
+  (when sbt-hydra:history-file
     (sbt-switch-to-active-sbt-buffer)
     (let* ((root (sbt:find-root))
-           (file (expand-file-name (format "%s/%s" root history-file))))
+           (file (expand-file-name (format "%s/%s" root sbt-hydra:history-file))))
       (when (file-readable-p file)
         (load-file file)))))
 
