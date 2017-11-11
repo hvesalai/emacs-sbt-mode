@@ -247,7 +247,7 @@ buffer called *sbt*projectdir."
   (use-local-map sbt:mode-map)
   (ignore-errors (scala-mode:set-scala-syntax-mode))
   (add-hook 'sbt-mode-hook 'sbt:initialize-for-comint-mode)
-  (add-hook 'sbt-mode-hook 'sbt:initialize-for-compilation-mode)
+  (add-hook 'sbt-mode-hook 'sbt:initialize-for-compilation-mode))
 
 (provide 'sbt-mode)
 ;;; sbt-mode.el ends here
