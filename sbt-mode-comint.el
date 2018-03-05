@@ -27,12 +27,12 @@ as the comint-input-ring on console start-up"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:sbt-prompt-regexp "^\\(\\[[^\]]*\\] \\)?[>$][ ]*"
+(defcustom sbt:sbt-prompt-regexp "^\\(sbt:[^>]+\\)?>[ ]+"
   "A regular expression to match sbt REPL prompt"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:console-prompt-regexp "^scala>[ ]*"
+(defcustom sbt:console-prompt-regexp "^scala>[ ]+"
   "A regular expression to match scala REPL prompt"
   :type 'string
   :group 'sbt)
@@ -42,8 +42,8 @@ as the comint-input-ring on console start-up"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:prompt-regexp "^\\(\\(scala\\|\\[[^\]]*\\] \\)?[>$]\\|[ ]+|\\)[ ]*"
-  "A regular expression to match sbt and scala console prompts"
+(defcustom sbt:prompt-regexp "^\\(\\(sbt:[^>]+\\)?\\|scala\\)>[ ]+"
+  "A regular expression to match sbt and scala console prompts. The prompt MUST NOT match \"^[completions].*\"."
   :type 'string
   :group 'sbt)
 
@@ -185,15 +185,14 @@ what `sbt:move-marker-before-prompt-filter` did."
 (defun sbt:scala-escape-string (str)
   (mapconcat 'sbt:scala-escape-char str ""))
 
-(defconst sbt:completions-regex "^\\[completions\\] \\(.*\\)?$")
+(defconst sbt:completions-regex "^\\[completions\\] \\(.*?\\)?$")
 (defconst sbt:repl-completions-string
   ;; waiting for better times... maybe some day we will have a completions command in
   ;; the scala-console
-  (concat "{ val input = \"$1\"; "
-          "val completer = new scala.tools.nsc.interpreter.JLineCompletion($intp).completer; "
-          "val completions = completer.complete(input, input.length); "
-          "val prefix = input.substring(0, completions.cursor); "
-          "completions.candidates.foreach(c => println(\"[completions] \" + c))} // completions")
+  (concat "new scala.tools.nsc.interpreter.PresentationCompilerCompleter($intp)."
+          "complete(\"$1\", \"$1\".length).candidates."
+          "foreach(c => println(s\"[completions] $c\"))"
+          " // completions")
   "A command to send to scala console to get completions for $1 (an escaped string).")
 
 (defun sbt:get-sbt-completions (input)
