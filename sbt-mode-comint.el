@@ -70,7 +70,7 @@ line of output buffer."
   (sbt:require-buffer)
   (when (derived-mode-p 'comint-mode)
 
-    (setq comint-process-echoes t)
+    (setq comint-process-echoes nil)
     (setq comint-scroll-to-bottom-on-output sbt:scroll-to-bottom-on-output)
     (setq comint-prompt-regexp sbt:prompt-regexp)
     (setq-local comint-use-prompt-regexp t)
