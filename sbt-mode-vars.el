@@ -14,10 +14,9 @@
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:program-options
-  (when (eql system-type 'windows-nt)
-    '("-Djline.terminal=jline.UnsupportedTerminal"))
-  "Options passed to sbt by the `sbt:run-sbt' command."
+(defcustom sbt:program-options '("-Djline.terminal=none")
+  "Options passed to sbt by the `sbt:run-sbt' command.
+   See https://github.com/ensime/emacs-sbt-mode/issues/139"
   :type '(repeat string)
   :group 'sbt)
 
