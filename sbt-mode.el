@@ -175,8 +175,6 @@ buffer called *sbt*projectdir."
   (let* ((project-root (or (sbt:find-root)
 			   (error "Could not find project root, type `C-h f sbt:find-root` for help.")))
          (buffer-name (sbt:buffer-name))
-         ;; WORKAROUND https://github.com/jline/jline2/pull/285
-         (process-environment (append '("EMACS=true") process-environment))
          (inhibit-read-only 1))
     ;; (when (null project-root)
     ;;   (error "Could not find project root, type `C-h f sbt:find-root` for help."))
