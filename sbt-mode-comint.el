@@ -15,6 +15,13 @@
   (defvar sbt:submode)
   (defun sbt-command (c)))
 
+(defvar ansi-color-regexp)
+(when (not (boundp 'ansi-color-regexp))
+  ;; `ansi-color-regexp' removed from ansi-color.el and replaced by
+  ;; `ansi-color-control-seq-regexp'
+  ;; commit 35ed01dfb3f811a997e26d843e9971eb6b81b125
+  (setq ansi-color-regexp ansi-color-control-seq-regexp))
+
 (defcustom sbt:sbt-history-file "target/.history"
   "The .history file written by sbt. Relative to the sbt project
 root. This will be loaded as the comint-input-ring on start-up"
