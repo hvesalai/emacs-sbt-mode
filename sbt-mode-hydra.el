@@ -695,7 +695,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 
 (defun sbt-hydra:parse-sbt-output-skip-init (sbt-output)
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
-    (when (string-match sbt:prompt-regexp output-cleared)
+    (when (string-match sbt:sbt-prompt-regexp output-cleared)
       (remove-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init)
       (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info))))
 
@@ -703,8 +703,8 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
     (setq sbt-hydra:sbt-output-cleared (concat sbt-hydra:sbt-output-cleared output-cleared))
     ;; match only if sbt prompt is very last thing in output-cleared
-    (when (eq (length output-cleared)
-              (when (string-match sbt:prompt-regexp output-cleared)
+    (when (eq (length sbt-hydra:sbt-output-cleared)
+              (when (string-match sbt:sbt-prompt-regexp sbt-hydra:sbt-output-cleared)
                 (match-end 0)))
       (remove-hook 'comint-output-filter-functions hook)
       (funcall f sbt-hydra:sbt-output-cleared)
