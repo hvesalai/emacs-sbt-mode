@@ -198,9 +198,9 @@ _q_ quit _o_ back _u_ testOnly _x_ clean -- -z %`sbt-hydra:sbt-test-substring
      `(defhydra ,name (:color red)
         ,(format "
 %s
-^-^----------^-^--------------^-^-------^-^---------^-^---------^-^--------^-^------^-^-----------^-^--------
-_q_ quit     _o_ testHydra    _p_ parse _u_ testOnly _a_ repeat _n_ no-op  _i_ edit _s_ sbt-shell _v_ history
-_c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ eof  _h_ help
+^-^----------^-^--------------^-^-------^-^-----------^-^--------^-^--------^-^--------^-^-----------^-^-----
+_q_ quit     _o_ testHydra    _p_ parse _u_ testOnly  _a_ repeat _n_ no-op  _i_ edit   _s_ sbt-shell _e_ eof
+_c_ compile  _y_ test:compile _t_ test  _k_ testQuick _r_ run    _l_ clean  _d_ reload _v_ history   _h_ help
 " switcher)
         ,@heads)))
 
@@ -212,6 +212,9 @@ _c_ compile  _y_ test:compile _t_ test  _r_ run      _l_ clean  _d_ reload _e_ e
 
 (defun sbt-hydra-command:test-test (project)
   `((sbt-hydra:run-project-command "test:test" ,project) nil))
+
+(defun sbt-hydra-command:test-test-quick (project)
+  `((sbt-hydra:run-project-command "test:testQuick" ,project) nil))
 
 (defun sbt-hydra-command:test-compile (project)
   `((sbt-hydra:run-project-command "test:compile" ,project) nil))
@@ -292,6 +295,7 @@ q - quit         - close hydra
 c - compile      - execute 'compile' command for active project
 y - test:compile - execute 'test:compile' command for active project
 t - test         - execute 'test' command for active project
+k - testQuick    - execute 'testQuick' command for active project
 r - run          - execute 'run' command for active project
 l - clean        - execute 'clean' command for active project
 d - reload       - execute 'reload' command
@@ -556,6 +560,7 @@ Read data from the file specified by `sbt-hydra:history-file'."
                         (list (sbt-hydra-command:clean current-project))
                         (list (sbt-hydra-command:compile current-project))
                         (list (sbt-hydra-command:test-test current-project))
+                        (list (sbt-hydra-command:test-test-quick current-project))
                         (list (sbt-hydra-command:run current-project))
                         (list (sbt-hydra-command:test-compile current-project))
                         (list (sbt-hydra-command:eof))
@@ -571,7 +576,7 @@ Read data from the file specified by `sbt-hydra:history-file'."
                         (list (sbt-hydra-command:edit-last-command))
                         (list (sbt-hydra-command:help))
                         (list (sbt-hydra-command:history))))
-         (keys '("l" "c" "t" "r" "y" "e" "q" "n" "p" "o" "s" "d" "a" "u" "f" "i" "h" "v"))
+         (keys '("l" "c" "t" "k" "r" "y" "e" "q" "n" "p" "o" "s" "d" "a" "u" "f" "i" "h" "v"))
          (sbt-commands (cl-mapcar 'sbt-hydra:add-command-key keys sbt-commands))
          (project-hydras (mapcar 'sbt-hydra:switch-hydra projects))
          (project-keys (mapcar 'char-to-string (number-sequence 65 (+ 65 (length project-hydras)))))
@@ -695,7 +700,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 
 (defun sbt-hydra:parse-sbt-output-skip-init (sbt-output)
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
-    (when (string-match sbt:prompt-regexp output-cleared)
+    (when (string-match sbt:sbt-prompt-regexp output-cleared)
       (remove-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init)
       (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info))))
 
@@ -703,8 +708,8 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
     (setq sbt-hydra:sbt-output-cleared (concat sbt-hydra:sbt-output-cleared output-cleared))
     ;; match only if sbt prompt is very last thing in output-cleared
-    (when (eq (length output-cleared)
-              (when (string-match sbt:prompt-regexp output-cleared)
+    (when (eq (length sbt-hydra:sbt-output-cleared)
+              (when (string-match sbt:sbt-prompt-regexp sbt-hydra:sbt-output-cleared)
                 (match-end 0)))
       (remove-hook 'comint-output-filter-functions hook)
       (funcall f sbt-hydra:sbt-output-cleared)
