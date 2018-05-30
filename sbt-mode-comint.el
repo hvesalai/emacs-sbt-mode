@@ -89,6 +89,7 @@ line of output buffer."
     (setq comint-input-sender 'sbt:input-sender)
     (setq-local sbt:previous-history-file nil)
     (setq-local sbt:submode nil)
+    (setq-local sbt:scala-version (
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
     (add-hook 'comint-output-filter-functions 'sbt:ansi-filter)
 ))
@@ -194,6 +195,16 @@ what `sbt:move-marker-before-prompt-filter` did."
 
 (defconst sbt:completions-regex "^\\[completions\\] \\(.*?\\)?$")
 
+(defconst sbt:repl-completions-string
+  ;; waiting for better times... maybe some day we will have a completions command in
+  ;; the scala-console
+  (concat "new scala.tools.nsc.interpreter.PresentationCompilerCompleter($intp)."
+          "complete(\"$1\", \"$1\".length).candidates."
+          "foreach(c => println(s\"[completions] $c\"))"
+          " // completions")
+  "A command to send to scala console to get completions for $1 (an escaped string).")
+
+
 (defun sbt:get-completions (input)
    (sbt:require-buffer)
    (when (not (comint-check-proc (current-buffer)))
@@ -234,7 +245,8 @@ what `sbt:move-marker-before-prompt-filter` did."
     (beginning-of-line)
     (if (> beg end)
         (comint-goto-process-mark)
-      (cond ((or (looking-at-p sbt:sbt-prompt-regexp)
+      (cond (()
+             (or (looking-at-p sbt:sbt-prompt-regexp)
                  (looking-at-p sbt:console-prompt-regexp))
              (goto-char point)
              (let ((completions (sbt:get-completions (buffer-substring beg end))))
