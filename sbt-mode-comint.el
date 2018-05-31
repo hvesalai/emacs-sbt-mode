@@ -281,7 +281,6 @@ what `sbt:move-marker-before-prompt-filter` did."
                                        1)
        (message nil))))
 
-
 (defun sbt:completion-at-point ()
   (sbt:require-buffer)
   (let ((point (point))
