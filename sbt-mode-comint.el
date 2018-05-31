@@ -91,7 +91,6 @@ line of output buffer."
     (setq-local sbt:previous-history-file nil)
     (setq-local sbt:submode nil)
     (setq-local sbt:scala-version nil)
-    (message "Got here...")
 
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
     (add-hook 'comint-output-filter-functions 'sbt:ansi-filter)
