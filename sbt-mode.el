@@ -83,7 +83,7 @@ that outputs errors."
     (setq sbt:previous-command command)))
 
 (defun sbt:get-sbt-completions-for-command (input)
-  (ignore-errors (with-current-buffer (sbt:buffer-name) (sbt:get-sbt-completions input))))
+  (ignore-errors (with-current-buffer (sbt:buffer-name) (sbt:get-completions input))))
 
 ;;;###autoload
 (defun sbt-run-previous-command ()
