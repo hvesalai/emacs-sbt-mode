@@ -90,6 +90,31 @@ sbt:default-command, if no other command has yet been run)."
   (interactive)
   (sbt:command (sbt:get-previous-command)))
 
+(defun sbt-do-compile ()
+  "Compile all sources including tests."
+  (interactive)
+  (sbt:command "test:compile"))
+
+(defun sbt-do-run ()
+  "Execute the sbt `run' command for the project."
+  (interactive)
+  (sbt:command "run"))
+
+(defun sbt-do-test ()
+  "Run all the tests."
+  (interactive)
+  (sbt-command "test"))
+
+(defun sbt-do-clean ()
+  "Execute the sbt `clean' command for the project."
+  (interactive)
+  (sbt:command "clean"))
+
+(defun sbt-do-package ()
+  "Build a jar file of the project."
+  (interactive)
+  (sbt:command "package"))
+
 (defun sbt-completion-at-point ()
   "Complete the command at point. Works both in sbt shell and
 scala console."
