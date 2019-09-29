@@ -2,14 +2,12 @@
 
 ;; Copyright (c) 2013 Heikki Vesalainen
 
-;; Homepage: https://github.com/ensime/emacs-sbt-mode
+;; Homepage: https://github.com/hvesalai/emacs-sbt-mode
 ;; Keywords: languages
 ;; Package-Version:  0.2
 ;; Package-Requires: ((emacs "24.4"))
 
 ;;; Commentary:
-;;
-;;  Documentation at http://ensime.github.io/editors/emacs/sbt-mode/
 ;;
 ;;; Code:
 
@@ -137,8 +135,7 @@ interrupting triggered execution, such as ~compile."
 
   (unless (sbt:find-root)
     (error (concat "You're not in an sbt project.  "
-		   "Maybe build.sbt or build.scala is missing?  "
-		   "See http://ensime.org/build_tools")))
+		   "Maybe build.sbt or build.scala is missing?  ")))
 
   (when (not (comint-check-proc (sbt:buffer-name)))
     (sbt:run-sbt))

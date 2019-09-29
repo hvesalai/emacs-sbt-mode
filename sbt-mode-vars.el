@@ -14,9 +14,9 @@
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:program-options '("-Djline.terminal=none")
+(defcustom sbt:program-options '("")
   "Options passed to sbt by the `sbt:run-sbt' command.
-   See https://github.com/ensime/emacs-sbt-mode/issues/139"
+   See https://github.com/ensime/emacs-sbt-mode/issues/139 for older sbts"
   :type '(repeat string)
   :group 'sbt)
 

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Josef Vlach
 ;; License: http://www.gnu.org/licenses/gpl.html
 
-;; Homepage: https://github.com/ensime/emacs-sbt-mode
+;; Homepage: https://github.com/hvesalai/emacs-sbt-mode
 ;; Keywords: languages
 ;; Package-Version:  0.2
 ;; Package-Requires: ()
