@@ -31,6 +31,19 @@
 
 (defvar sbt:command-history-temp nil)
 
+(defvar sbt:display-buffer-action nil
+  "Action to alter the way in which the SBT buffer is displayed.
+When `sbt-command' is first run, unless it is configured to not be shown at all,
+`display-buffer' is used to select a window for it. This variable is passed to
+`display-buffer' as its ACTION parameter; see that documentation for details.
+For example, to make SBT show up only 8 lines high at the bottom of the screen
+you can set this as follows:
+
+  (defun display-sbt-at-bottom (buffer args)
+    (display-buffer-at-bottom buffer (cons '(window-height . 8) args)))
+  (setq sbt:display-buffer-action '(display-sbt-at-bottom))
+")
+
 ;;;
 ;;; Our user commands
 ;;;
@@ -172,7 +185,9 @@ interrupting triggered execution, such as ~compile."
 
   (with-current-buffer (sbt:buffer-name)
     (when sbt:display-command-buffer
-      (if focus (pop-to-buffer (current-buffer)) (display-buffer (current-buffer))))
+      (if focus
+          (pop-to-buffer (current-buffer))
+          (display-buffer (current-buffer) sbt:display-buffer-action)))
     (cond ((eq sbt:submode 'console)
            (comint-send-string (current-buffer) ":quit\n"))
           ((eq sbt:submode 'paste-mode)
@@ -192,7 +207,7 @@ interrupting triggered execution, such as ~compile."
       sbt:previous-command)))
 
 (defun sbt:run-sbt (&optional kill-existing-p pop-p)
-  "Start or re-strats (if kill-existing-p is non-NIL) sbt in a
+  "Start or restarts (if kill-existing-p is non-NIL) sbt in a
 buffer called *sbt*projectdir."
   (let* ((project-root (or (sbt:find-root)
 			   (error "Could not find project root, type `C-h f sbt:find-root` for help.")))
