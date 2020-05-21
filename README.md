@@ -5,7 +5,7 @@ core functionality includes:
 - interacting with sbt shell and scala console
 - compiling code and navigating to errors
 
-See also (emacs-scala-mode)[https://github.com/hvesalai/emacs-scala-mode].
+See also [emacs-scala-mode](https://github.com/hvesalai/emacs-scala-mode).
 
 ## Installation
 
