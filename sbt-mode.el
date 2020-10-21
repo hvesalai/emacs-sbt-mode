@@ -248,7 +248,9 @@ buffer called *sbt*projectdir."
    '("--go-home-compile.el--you-are-drn^H^H^Hbugs--"))
   (setq-local
    compilation-error-regexp-alist
-   '(;; Sbt 1.0.x
+   '(;; Dotty (which implies Sbt 1.0.x)
+     ("^\\[error][[:space:]]--[[:space:]].*Error: \\([^:]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)" 1 2 3 nil)
+     ;; Sbt 1.0.x
      ("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\):" 1 2 3 2 1)
      ;; Sbt 0.13.x
      ("^\\[error][[:space:]]\\([/[:word:]]:?[^:[:space:]]+\\):\\([[:digit:]]+\\):" 1 2 nil 2 1)
