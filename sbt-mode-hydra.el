@@ -41,6 +41,7 @@
 (defvar-local sbt-hydra:projects nil)               ;; dir-local
 (defvar-local sbt-hydra:command-line-arguments nil) ;; dir-local
 (defvar-local sbt-hydra:system-properties nil)      ;; dir-local
+(defvar sbt-hydra:after-create-hook nil "Hook run after Hydra is created.")
 
 ;; Make `sbt-hydra:projects' safe if its value is list of strings
 (put 'sbt-hydra:projects 'safe-local-variable
@@ -340,7 +341,7 @@ x - clean        - reset substring (-- -z) to empty string
         (is-revolver (member project sbt-hydra:revolver-projects)))
     (cond (is-jetty
            (sbt-hydra:run-run-project-command "jetty:start" project))
-          (is-revolver
+          ((and is-revolver (not is-play)) ;; Run as revolver only if it is not play project
            (sbt-hydra:run-run-project-command "reStart" project))
           ((or main-class is-play) ;; play projects and simple projects are run in the same way
            (sbt-hydra:run-run-project-command (format "run %s" (concat "" (cdr (assoc project sbt-hydra:command-line-arguments)))) project)
@@ -462,10 +463,10 @@ Read data from the file specified by `sbt-hydra:history-file'."
         (t
          (save-excursion
            (let ((project-folder (let* ((root (sbt:find-root))
-                                 (buffer-name (buffer-file-name (current-buffer))) ;; not every buffer represents a file
-                                 (path-from-root (when (and root buffer-name) (replace-regexp-in-string (concat ".*" (substring root 1)) "" buffer-name))))
-                            (when (and path-from-root (string-match "^\\([[:word:]]*\\)/" path-from-root))
-                              (match-string-no-properties 1 path-from-root))))
+                                        (buffer-name (buffer-file-name (current-buffer))) ;; not every buffer represents a file
+                                        (path-from-root (when (and root buffer-name) (replace-regexp-in-string (concat ".*" (substring root 1)) "" buffer-name))))
+                                   (when (and path-from-root (string-match "^\\([[:word:]]*\\)/" path-from-root))
+                                     (match-string-no-properties 1 path-from-root))))
                  (substring (let ((line (thing-at-point 'line)))
                               (when (string-match "\"\\(.*\\)\" \\(in\\|should\\)" line)
                                 (replace-regexp-in-string "\"" "" (match-string-no-properties 1 line)))))
@@ -522,7 +523,7 @@ Read data from the file specified by `sbt-hydra:history-file'."
    (if sbt-hydra:test-hydra-active
        (if (functionp 'sbt-test-hydra/body)
            (sbt-test-hydra/body)
-     	(sbt-hydra:no-test-hydra))
+     	 (sbt-hydra:no-test-hydra))
      (funcall sbt-hydra:current-hydra))))
 
 (defun sbt-hydra:no-test-hydra ()
@@ -643,19 +644,83 @@ Read data from the file specified by `sbt-hydra:history-file'."
                                (format "%s -- -z \"%s\"" command sbt-hydra:sbt-test-substring))))
     (sbt-hydra:run-project-command command-with-params project)))
 
+(defun sbt-hydra:project-info-by-version (sbt-output)
+  "Output of 'plugins' command changed with sbt 1.4. Pre sbt 1.4 output looks like this:
+
+In file:/Users/scala/example-project-1.3/
+	sbt.plugins.CorePlugin: enabled in core, web
+	sbt.ScriptedPlugin
+	sbt.plugins.SbtPlugin
+	sbt.plugins.SemanticdbPlugin: enabled in core, web
+>
+
+Starting with sbt 1.4 output looks like this:
+
+In build /Users/scala/example-project-1.4/:
+  Enabled plugins in core:
+    sbt.plugins.CorePlugin
+    sbt.plugins.SemanticdbPlugin
+  Enabled plugins in web:
+    sbt.plugins.CorePlugin
+    sbt.plugins.SemanticdbPlugin
+Plugins that are loaded to the build but not enabled in any subprojects:
+  sbt.ScriptedPlugin
+  sbt.plugins.SbtPlugin
+>
+"
+  (if (string-match "  Enabled plugins in \\(.*\\):$" sbt-output)
+      (sbt-hydra:projects-info sbt-output)
+    (sbt-hydra:projects-info-legacy sbt-output)))
+
+(defconst sbt-hydra:play-plugin-name "play.sbt.Play")
+(defconst sbt-hydra:jetty-plugin-name "com.earldouglas.xwp.JettyPlugin")
+(defconst sbt-hydra:revolver-plugin-name "spray.revolver.RevolverPlugin")
+
 (defun sbt-hydra:projects-info (sbt-output)
+  (let ((project-names)
+        (play-projects)
+        (jetty-projects)
+        (revolver-projects))
+    (dolist (project (sbt-hydra:split-to-projects sbt-output))
+      (let ((project-name (car project))
+            (project-plugins-str (cdr project)))
+        (push project-name project-names)
+        (when (string-match sbt-hydra:play-plugin-name project-plugins-str)
+          (push project-name play-projects))
+        (when (string-match sbt-hydra:jetty-plugin-name project-plugins-str)
+          (push project-name jetty-projects))
+        (when (string-match sbt-hydra:revolver-plugin-name project-plugins-str)
+          (push project-name revolver-projects))))
+    (sbt-hydra:setup-projects project-names play-projects jetty-projects revolver-projects)))
+
+(defun sbt-hydra:setup-projects (project-names play-projects jetty-projects revolver-projects)
+  (setq sbt-hydra:play-framework-projects play-projects)
+  (setq sbt-hydra:jetty-projects jetty-projects)
+  (setq sbt-hydra:revolver-projects revolver-projects)
+
+  (if sbt-hydra:projects
+      sbt-hydra:projects
+    project-names))
+
+(defun sbt-hydra:split-to-projects (sbt-output)
+  (let ((data)
+        (str (sbt-hydra:strip-not-enabled-plugins sbt-output)))
+    (dolist (split (split-string str "Enabled") data)
+      (when (string-match "^ plugins in \\(.*\\):$" split)
+        (push (cons (match-string 1 split) split) data)))))
+
+(defun sbt-hydra:strip-not-enabled-plugins (sbt-output)
+  (setq position (string-match "Plugins that are loaded to the build but not enabled in any subprojects:" sbt-output))
+  (if position
+      (substring-no-properties sbt-output 0 position)
+    sbt-output))
+
+(defun sbt-hydra:projects-info-legacy (sbt-output)
   (let ((project-names (sbt-hydra:projects-for-plugin sbt-output "sbt.plugins.CorePlugin"))
-        (play-projects (sbt-hydra:projects-for-plugin sbt-output "play.sbt.Play"))
-        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output "com.earldouglas.xwp.JettyPlugin"))
-        (revolver-projects (sbt-hydra:projects-for-plugin sbt-output "spray.revolver.RevolverPlugin")))
-
-    (setq sbt-hydra:play-framework-projects play-projects)
-    (setq sbt-hydra:jetty-projects jetty-projects)
-    (setq sbt-hydra:revolver-projects revolver-projects)
-
-    (if sbt-hydra:projects
-        sbt-hydra:projects
-      project-names)))
+        (play-projects (sbt-hydra:projects-for-plugin sbt-output sbt-hydra:play-plugin-name))
+        (jetty-projects (sbt-hydra:projects-for-plugin sbt-output sbt-hydra:jetty-plugin-name))
+        (revolver-projects (sbt-hydra:projects-for-plugin sbt-output sbt-hydra:revolver-plugin-name)))
+    (sbt-hydra:setup-projects project-names play-projects jetty-projects revolver-projects)))
 
 (defun sbt-hydra:projects-for-plugin (sbt-output plugin)
   (if (string-match (format "^[[:space:]]*%s: enabled in \\(.*\\)$" plugin) sbt-output)
@@ -685,8 +750,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
               (sbt:run-sbt)
               (sbt-switch-to-active-sbt-buffer)
               (hack-dir-local-variables-non-file-buffer)
-              (sbt:command "plugins")
-              (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init)))))
+              (add-hook 'comint-output-filter-functions 'sbt-hydra:detect-when-launched)))))
     "Not in sbt project. Hydra can be generated only from sbt project. See `sbt:find-root' to get more informations."))
 
 (defun sbt-hydra:parse-main-class (sbt-output)
@@ -695,14 +759,15 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
 (defun sbt-hydra:parse-plugins-info (sbt-output)
   (sbt-hydra:parse-sbt-output sbt-output 'sbt-hydra:generate-hydras-from-plugins-info 'sbt-hydra:parse-plugins-info))
 
-(defun sbt-hydra:parse-plugins-info-skip-init (sbt-output)
-  (sbt-hydra:parse-sbt-output-skip-init sbt-output))
+(defun sbt-hydra:detect-when-launched (sbt-output)
+  (sbt-hydra:on-sbt-launch sbt-output))
 
-(defun sbt-hydra:parse-sbt-output-skip-init (sbt-output)
-  (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
+(defun sbt-hydra:on-sbt-launch (sbt-output)
+  (let ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
     (when (string-match sbt:sbt-prompt-regexp output-cleared)
-      (remove-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info-skip-init)
-      (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info))))
+      (remove-hook 'comint-output-filter-functions 'sbt-hydra:detect-when-launched)
+      (add-hook 'comint-output-filter-functions 'sbt-hydra:parse-plugins-info)
+      (sbt:command "plugins"))))
 
 (defun sbt-hydra:parse-sbt-output (sbt-output f hook)
   (let* ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
@@ -764,10 +829,16 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (sbt-hydra:generate-hydras projects)
   (sbt-hydra:run-current-hydra)
   (sbt-hydra:load-history)
-  (message "Success hydra for projects %s created." projects))
+  (message "Success hydra for projects %s created." projects)
+  (run-hooks 'sbt-hydra:after-create-hook))
+
+(defvar sbt-hydra:plugins-output nil) ;; Helper variable to accumulate output of "plugins" command.
 
 (defun sbt-hydra:generate-hydras-from-plugins-info (sbt-output)
-  (sbt-hydra:generate-hydras-from-projects (sbt-hydra:projects-info sbt-output)))
+  (let ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
+    (setq sbt-hydra:plugins-output (concat sbt-hydra:plugins-output output-cleared))
+    (when (string-match sbt:sbt-prompt-regexp sbt-hydra:plugins-output)
+      (sbt-hydra:generate-hydras-from-projects (sbt-hydra:project-info-by-version sbt-hydra:plugins-output)))))
 
 (defun sbt-test-hydra-command:test-only (project failing-test)
   `((sbt-test-hydra:test-only ,(format "test:testOnly %s" failing-test), project) ,(format "%s - %s" project failing-test)))
