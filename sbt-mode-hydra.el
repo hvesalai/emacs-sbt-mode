@@ -524,7 +524,11 @@ Read data from the file specified by `sbt-hydra:history-file'."
        (if (functionp 'sbt-test-hydra/body)
            (sbt-test-hydra/body)
      	 (sbt-hydra:no-test-hydra))
-     (funcall sbt-hydra:current-hydra))))
+     (if (functionp sbt-hydra:current-hydra)
+         (funcall sbt-hydra:current-hydra)
+       ;; If sbt-hydra:current-hydra is not a function here it means
+       ;; that parsing of sbt output failed. Let's try it again.
+       (sbt-hydra:create-hydra)))))
 
 (defun sbt-hydra:no-test-hydra ()
   (message "No hydra defined for testOnly command"))
@@ -672,7 +676,7 @@ Plugins that are loaded to the build but not enabled in any subprojects:
       (sbt-hydra:projects-info sbt-output)
     (sbt-hydra:projects-info-legacy sbt-output)))
 
-(defconst sbt-hydra:play-plugin-name "play.sbt.Play")
+(defconst sbt-hydra:play-plugin-name "play.sbt.Play.*")
 (defconst sbt-hydra:jetty-plugin-name "com.earldouglas.xwp.JettyPlugin")
 (defconst sbt-hydra:revolver-plugin-name "spray.revolver.RevolverPlugin")
 
@@ -737,6 +741,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (if (sbt:find-root)
       (progn
         (setq sbt-hydra:sbt-output-cleared "")
+        (setq sbt-hydra:plugins-output "")
         (let ((buffer-res (sbt-switch-to-active-sbt-buffer)))
           (if (or (bufferp buffer-res)
                   (equal buffer-res "Already in sbt buffer!"))
@@ -760,9 +765,6 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (sbt-hydra:parse-sbt-output sbt-output 'sbt-hydra:generate-hydras-from-plugins-info 'sbt-hydra:parse-plugins-info))
 
 (defun sbt-hydra:detect-when-launched (sbt-output)
-  (sbt-hydra:on-sbt-launch sbt-output))
-
-(defun sbt-hydra:on-sbt-launch (sbt-output)
   (let ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
     (when (string-match sbt:sbt-prompt-regexp output-cleared)
       (remove-hook 'comint-output-filter-functions 'sbt-hydra:detect-when-launched)
