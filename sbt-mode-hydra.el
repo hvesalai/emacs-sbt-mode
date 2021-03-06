@@ -714,10 +714,10 @@ Plugins that are loaded to the build but not enabled in any subprojects:
         (push (cons (match-string 1 split) split) data)))))
 
 (defun sbt-hydra:strip-not-enabled-plugins (sbt-output)
-  (setq position (string-match "Plugins that are loaded to the build but not enabled in any subprojects:" sbt-output))
-  (if position
-      (substring-no-properties sbt-output 0 position)
-    sbt-output))
+  (let ((position (string-match "Plugins that are loaded to the build but not enabled in any subprojects:" sbt-output)))
+    (if position
+        (substring-no-properties sbt-output 0 position)
+      sbt-output)))
 
 (defun sbt-hydra:projects-info-legacy (sbt-output)
   (let ((project-names (sbt-hydra:projects-for-plugin sbt-output "sbt.plugins.CorePlugin"))
@@ -730,6 +730,8 @@ Plugins that are loaded to the build but not enabled in any subprojects:
   (if (string-match (format "^[[:space:]]*%s: enabled in \\(.*\\)$" plugin) sbt-output)
       (split-string (match-string 1 sbt-output) "," t " ")
     nil))
+
+(defvar sbt-hydra:plugins-output nil) ;; Helper variable to accumulate output of "plugins" command.
 
 (defun sbt-hydra:create-hydra ()
   "Create hydras for current scala project. It will create one hydra for every sbt project.
@@ -833,8 +835,6 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
   (sbt-hydra:load-history)
   (message "Success hydra for projects %s created." projects)
   (run-hooks 'sbt-hydra:after-create-hook))
-
-(defvar sbt-hydra:plugins-output nil) ;; Helper variable to accumulate output of "plugins" command.
 
 (defun sbt-hydra:generate-hydras-from-plugins-info (sbt-output)
   (let ((output-cleared (replace-regexp-in-string ansi-color-regexp "" sbt-output)))
