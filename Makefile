@@ -22,9 +22,11 @@ ELISP_OPTIONS           += -L $(ROOT)
 ELISP_FILES		+= $(MODE_NAME)
 ELISP_FILES		+= $(MODE_NAME)-buffer
 ELISP_FILES		+= $(MODE_NAME)-comint
+ELISP_FILES		+= $(MODE_NAME)-hydra
 ELISP_FILES		+= $(MODE_NAME)-project
 ELISP_FILES		+= $(MODE_NAME)-rgrep
-ELISP_FILES		+= $(MODE_NAME)-hydra
+ELISP_FILES		+= $(MODE_NAME)-vars
+
 
 PKG_FILE		= $(SOURCE_DIR)/$(MODE_NAME)-pkg.el
 
