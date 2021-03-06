@@ -13,6 +13,7 @@
 (eval-when-compile
   (defvar sbt:previous-history-file)
   (defvar sbt:submode)
+  (defvar sbt:scala-version)
   (defun sbt-command (c)))
 
 (defvar ansi-color-regexp)
@@ -89,6 +90,8 @@ line of output buffer."
     (setq comint-input-sender 'sbt:input-sender)
     (setq-local sbt:previous-history-file nil)
     (setq-local sbt:submode nil)
+    (setq-local sbt:scala-version nil)
+
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
     (add-hook 'comint-output-filter-functions 'sbt:ansi-filter)
 ))
@@ -194,6 +197,64 @@ what `sbt:move-marker-before-prompt-filter` did."
 
 (defconst sbt:completions-regex "^\\[completions\\] \\(.*?\\)?$")
 
+(defconst sbt:repl-completions-string
+  ;; waiting for better times... maybe some day we will have a completions command in
+  ;; the scala-console
+  (concat "new scala.tools.nsc.interpreter.PresentationCompilerCompleter($intp)."
+          "complete(\"$1\", \"$1\".length).candidates."
+          "foreach(c => println(s\"[completions] $c\"))"
+          " // completions")
+  "A command to send to scala console to get completions for $1 (an escaped string).")
+
+(defsubst pre-12-6 (version)
+  "Check if VERSION is less than 2.12.6.  If VERSION is empty string, assume latest behavior"
+  (if (zerop (length version)) nil
+    (let* ((split (split-string version "\\."))
+           (major (string-to-number (nth 0 split)))
+           (minor (string-to-number (nth 1 split)))
+           (patch (string-to-number (nth 2 split))))
+      (or (< major 2) (< minor 12) (< patch 6)))))
+
+(defun sbt:get-pre-12-6-sbt-completions (input)
+   (sbt:require-buffer)
+   (when (not (comint-check-proc (current-buffer)))
+     (error "sbt is not running in buffer %s" (current-buffer)))
+   (when (save-excursion
+           (comint-goto-process-mark)
+           (beginning-of-line)
+           (not (looking-at-p sbt:sbt-prompt-regexp)))
+     (error "sbt is not ready (no prompt found)"))
+   (message "Querying sbt for completions for %s..." input)
+   (when (or (null input) (string-match "^\\s *$" input))
+     (setq input ""))
+   (setq input (concat "completions \""
+                       (sbt:scala-escape-string input)
+                       "\""))
+   (prog1
+       (comint-redirect-results-list input
+                                     sbt:completions-regex
+                                     1)
+     (message nil)))
+
+(defun sbt:get-pre-12-6-console-completions (input)
+   (sbt:require-buffer)
+   (when (not (comint-check-proc (current-buffer)))
+     (error "sbt is not running in buffer %s" (current-buffer)))
+   (when (save-excursion
+           (comint-goto-process-mark)
+           (beginning-of-line)
+           (not (looking-at-p sbt:console-prompt-regexp)))
+     (error "scala console is not ready (no prompt found)"))
+   (message "Querying scala console for completions for %s..." input)
+   (setq input (replace-regexp-in-string "\\$1"
+                                         (sbt:scala-escape-string input)
+                                         sbt:repl-completions-string t t))
+   (prog1
+       (comint-redirect-results-list input
+                                     sbt:completions-regex
+                                     1)
+     (message nil)))
+
 (defun sbt:get-completions (input)
    (sbt:require-buffer)
    (when (not (comint-check-proc (current-buffer)))
@@ -232,9 +293,28 @@ what `sbt:move-marker-before-prompt-filter` did."
         mid)
     (goto-char beg)
     (beginning-of-line)
+    (if (and (looking-at-p sbt:sbt-prompt-regexp) (null sbt:scala-version)) 
+        (setq-local sbt:scala-version (or (car (comint-redirect-results-list "scalaVersion" "\\([0-9.]+\\)\\b" 1)) "")))
     (if (> beg end)
         (comint-goto-process-mark)
-      (cond ((or (looking-at-p sbt:sbt-prompt-regexp)
+      (cond ((and (pre-12-6 sbt:scala-version) (looking-at-p sbt:sbt-prompt-regexp))
+             (goto-char point)
+             (let ((completions (sbt:get-pre-12-6-sbt-completions (buffer-substring beg end))))
+               (completion-in-region beg end completions `(lambda (s) (> (string-width s) 0)))))
+            ((and (pre-12-6 sbt:scala-version) (looking-at-p sbt:console-prompt-regexp))
+             (goto-char point)
+             (save-excursion
+               (goto-char end)
+               ;; find mid point (point respective to which the completions are given
+               (unless (or (= (point) beg) (looking-back "[.,;]" (1- (point))))
+                 (backward-sexp))
+               (setq mid (max beg (point)))
+               ;; find beg point (point respective to which completions are requested
+               (ignore-errors (while (> (point) beg) (backward-sexp)))
+               (setq beg (max beg (point))))
+             (let ((completions (sbt:get-pre-12-6-console-completions (buffer-substring beg end))))
+               (completion-in-region mid end completions `(lambda (s) (> (string-width s) 0)))))
+            ((or (looking-at-p sbt:sbt-prompt-regexp)
                  (looking-at-p sbt:console-prompt-regexp))
              (goto-char point)
              (let ((completions (sbt:get-completions (buffer-substring beg end))))
