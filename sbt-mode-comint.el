@@ -49,7 +49,9 @@ as the comint-input-ring on console start-up"
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:prompt-regexp "^\\(\\(sbt:[^>]+\\)?\\|scala\\)>[ ]+"
+;; NOTE: the escape sequence at the beginning is necessary in SBT 1.4.9 to find the prompt when checking completions
+;; it isn't necessary in sbt:console-prompt-regexp, since comint automatically removes escape codes from the "main" output
+(defcustom sbt:prompt-regexp "^\\(\\[0J\\)*\\(\\(sbt:[^>]+\\)?\\|scala\\)>[ ]+"
   "A regular expression to match sbt and scala console prompts. The prompt MUST NOT match \"^[completions].*\"."
   :type 'string
   :group 'sbt)
