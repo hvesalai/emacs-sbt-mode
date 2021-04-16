@@ -104,7 +104,7 @@ that multiline statement/expression will work as expected.
 The simplest way to compile the code you are working on in emacs by
 binding the `sbt-run-previous-command` to a key. For example
 `(local-set-key (kbd "C-x '") 'sbt-run-previous-command)`. By default,
-this will run `test:compile` (see `sbt:default-command` customization
+this will run `Test / compile` (see `sbt:default-command` customization
 variable).
 
 ### Triggered execution
@@ -121,7 +121,7 @@ complain that "Text is read-only".
 
 `sbt-mode` also offers [hydra](https://github.com/abo-abo/hydra) to
 speed up sbt interaction. This is focused mainly on running usual sbt
-commands `compile`, `test:compile`, `test`, `run` etc. on multiproject
+commands `compile`, `Test / compile`, `test`, `run` etc. on multiproject
 build. Hydra allows to execute these commands on per project basis.
 
 ### Basics

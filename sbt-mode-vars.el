@@ -20,7 +20,7 @@
   :type '(repeat string)
   :group 'sbt)
 
-(defcustom sbt:default-command "test:compile"
+(defcustom sbt:default-command "Test / compile"
   "The default command to run with sbt-command."
   :type 'string
   :group 'sbt)
