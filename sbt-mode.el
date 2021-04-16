@@ -106,7 +106,7 @@ sbt:default-command, if no other command has yet been run)."
 (defun sbt-do-compile ()
   "Compile all sources including tests."
   (interactive)
-  (sbt:command "test:compile"))
+  (sbt:command "Test / compile"))
 
 (defun sbt-do-run ()
   "Execute the sbt `run' command for the project."

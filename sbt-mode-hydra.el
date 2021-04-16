@@ -200,8 +200,8 @@ _q_ quit _o_ back _u_ testOnly _x_ clean -- -z %`sbt-hydra:sbt-test-substring
         ,(format "
 %s
 ^-^----------^-^--------------^-^-------^-^-----------^-^--------^-^--------^-^--------^-^-----------^-^-----
-_q_ quit     _o_ testHydra    _p_ parse _u_ testOnly  _a_ repeat _n_ no-op  _i_ edit   _s_ sbt-shell _e_ eof
-_c_ compile  _y_ test:compile _t_ test  _k_ testQuick _r_ run    _l_ clean  _d_ reload _v_ history   _h_ help
+_q_ quit     _o_ testHydra      _p_ parse _u_ testOnly  _a_ repeat _n_ no-op  _i_ edit   _s_ sbt-shell _e_ eof
+_c_ compile  _y_ Test / compile _t_ test  _k_ testQuick _r_ run    _l_ clean  _d_ reload _v_ history   _h_ help
 " switcher)
         ,@heads)))
 
@@ -212,13 +212,13 @@ _c_ compile  _y_ test:compile _t_ test  _k_ testQuick _r_ run    _l_ clean  _d_ 
   `((sbt-hydra:run-project-command "clean" ,project) nil))
 
 (defun sbt-hydra-command:test-test (project)
-  `((sbt-hydra:run-project-command "test:test" ,project) nil))
+  `((sbt-hydra:run-project-command "Test / test" ,project) nil))
 
 (defun sbt-hydra-command:test-test-quick (project)
-  `((sbt-hydra:run-project-command "test:testQuick" ,project) nil))
+  `((sbt-hydra:run-project-command "Test / testQuick" ,project) nil))
 
 (defun sbt-hydra-command:test-compile (project)
-  `((sbt-hydra:run-project-command "test:compile" ,project) nil))
+  `((sbt-hydra:run-project-command "Test / compile" ,project) nil))
 
 (defun sbt-hydra-command:compile (project)
   `((sbt-hydra:run-project-command "compile" ,project) nil))
@@ -255,7 +255,7 @@ _c_ compile  _y_ test:compile _t_ test  _k_ testQuick _r_ run    _l_ clean  _d_ 
   `((sbt-hydra:test-only-hydra-on) nil :exit t))
 
 (defun sbt-hydra-command:it-test (project)
-  `((sbt-hydra:run-project-command "it:test" ,project) nil))
+  `((sbt-hydra:run-project-command "It / test" ,project) nil))
 
 (defun sbt-hydra-command:quit ()
   `(nil nil))
@@ -289,33 +289,33 @@ Most action provided are scoped by active project. For example key 'c' will trig
 
 Available actions:
 
-A, B, C ...      - switch between project hydras, this part is generated dynamically on start by executing 'plugins' command
-                   in *sbt* buffer or it is populated by projects defined in `sbt-hydra:projects' Directory Local Variables
+A, B, C ...        - switch between project hydras, this part is generated dynamically on start by executing 'plugins' command
+                     in *sbt* buffer or it is populated by projects defined in `sbt-hydra:projects' Directory Local Variables
 
-q - quit         - close hydra
-c - compile      - execute 'compile' command for active project
-y - test:compile - execute 'test:compile' command for active project
-t - test         - execute 'test' command for active project
-k - testQuick    - execute 'testQuick' command for active project
-r - run          - execute 'run' command for active project
-l - clean        - execute 'clean' command for active project
-d - reload       - execute 'reload' command
-e - eof          - send end-of-file character to the sbt prompt, useful for example for terminating running play application
-i - edit         - edit last executed command and execute edited command
-a - repeat       - repeat last executed command again
-n - no-op        - execute 'name' command. This is convenient way how to prevent last command execute again. For example when
-                   you don't want to execute test command again since it takes long time to finish
-p - parse        - parse output of Sbt buffer for failed test. It must be run after 'test' command finish execution and there
-                   are failed tests. In this case at the end of output is list of classes containing some failed tests.
-                   This action will parse this classes names and it will create so called 'testHydra' which allow
-                   run these classes only one by one.
-o - testHydra    - switch to special hydra which is created by 'parse' action. More info in section 'Test Hydra'
-u - testOnly     - run 'testOnly' command for active project with substring parameter (-- -z) containing text from the line point
-                   is at. Works in Sbt buffer or Scala source file, but point must be at line contaning should text of the test.
-f - it:test      - execute 'it:test' command for active project
-v - history      - displays commands history for effective execution of old commands.
-                   When hydra is executed with one prefix argument C-u invoking history command allows to remove selected command.
-                   When hydra is executed with tow or more prefix arguments C-u invoking history command will clear the history.
+q - quit           - close hydra
+c - compile        - execute 'compile' command for active project
+y - Test / compile - execute 'Test / compile' command for active project
+t - test           - execute 'test' command for active project
+k - testQuick      - execute 'testQuick' command for active project
+r - run            - execute 'run' command for active project
+l - clean          - execute 'clean' command for active project
+d - reload         - execute 'reload' command
+e - eof            - send end-of-file character to the sbt prompt, useful for example for terminating running play application
+i - edit           - edit last executed command and execute edited command
+a - repeat         - repeat last executed command again
+n - no-op          - execute 'name' command. This is convenient way how to prevent last command execute again. For example when
+                     you don't want to execute test command again since it takes long time to finish
+p - parse          - parse output of Sbt buffer for failed test. It must be run after 'test' command finish execution and there
+                     are failed tests. In this case at the end of output is list of classes containing some failed tests.
+                     This action will parse this classes names and it will create so called 'testHydra' which allow
+                     run these classes only one by one.
+o - testHydra      - switch to special hydra which is created by 'parse' action. More info in section 'Test Hydra'
+u - testOnly       - run 'testOnly' command for active project with substring parameter (-- -z) containing text from the line point
+                     is at. Works in Sbt buffer or Scala source file, but point must be at line contaning should text of the test.
+f - It / test      - execute 'It / test' command for active project
+v - history        - displays commands history for effective execution of old commands.
+                     When hydra is executed with one prefix argument C-u invoking history command allows to remove selected command.
+                     When hydra is executed with tow or more prefix arguments C-u invoking history command will clear the history.
 
 *** Test Hydra ***
 
@@ -327,7 +327,7 @@ u - testOnly     - set substring (-- -z) for running one of defined test. By def
                    contains should text of the test
 x - clean        - reset substring (-- -z) to empty string
 
-[a] [b] [c] ...  - it run 'test:testOnly' for failed test optionally limited to (-- -z) substring. This section is generated
+[a] [b] [c] ...  - it run 'Test / testOnly' for failed test optionally limited to (-- -z) substring. This section is generated
                    dynamically by the 'parse' action from project hydra.
 ")
           (goto-char (point-min))
@@ -843,7 +843,7 @@ The easiest way to use second option is by running `add-dir-local-variable' comm
       (sbt-hydra:generate-hydras-from-projects (sbt-hydra:project-info-by-version sbt-hydra:plugins-output)))))
 
 (defun sbt-test-hydra-command:test-only (project failing-test)
-  `((sbt-test-hydra:test-only ,(format "test:testOnly %s" failing-test), project) ,(format "%s - %s" project failing-test)))
+  `((sbt-test-hydra:test-only ,(format "Test / testOnly %s" failing-test), project) ,(format "%s - %s" project failing-test)))
 
 (defun sbt-test-hydra:generate-hydra (project failing-tests)
   (let* ((sbt-commands (append
