@@ -11,7 +11,6 @@
 (require 'sbt-mode-buffer)
 
 (eval-when-compile
-  (defvar sbt:previous-history-file)
   (defvar sbt:submode)
   (defun sbt-command (c)))
 
@@ -22,20 +21,20 @@
   ;; commit 35ed01dfb3f811a997e26d843e9971eb6b81b125
   (setq ansi-color-regexp ansi-color-control-seq-regexp))
 
-(defcustom sbt:sbt-history-file "target/.history"
-  "The .history file written by sbt. Relative to the sbt project
-root. This will be loaded as the comint-input-ring on start-up"
+(defcustom sbt:sbt-history-file "target/.sbt_mode_shell_history"
+  "The file to store and read shell command history from for
+comint. Not the sbt's file."
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:console-history-file "~/.scala_history"
-  "The .scala_history file written by scala. This will be loaded
-as the comint-input-ring on console start-up"
+(defcustom sbt:console-history-file "target/.sbt_mode_console_history"
+  "The file to store and read console command history from for
+comint. Not the sbt's file."
   :type 'string
   :group 'sbt)
 
-(defcustom sbt:sbt-prompt-regexp "^\\(sbt:[^>]+\\)?>[ ]+"
-  "A regular expression to match sbt REPL prompt"
+(defcustom sbt:sbt-prompt-regexp (concat "^\\(" ansi-color-regexp "\\)*" "\\(sbt:[^>]+\\)?>[ ]+")
+  "A regular expression to match sbt shell prompt"
   :type 'string
   :group 'sbt)
 
@@ -46,15 +45,6 @@ as the comint-input-ring on console start-up"
 
 (defcustom sbt:paste-mode-prompt-regexp "^// Entering paste mode"
   "A regular expression to detect paste-mode"
-  :type 'string
-  :group 'sbt)
-
-;; NOTE: the escape sequence at the beginning is necessary in SBT
-;; 1.4.9 to find the prompt when checking completions it isn't
-;; necessary in sbt:console-prompt-regexp, since comint automatically
-;; removes escape codes from the "main" output
-(defcustom sbt:prompt-regexp (concat "^\\(" ansi-color-regexp "\\)*" "\\(\\(sbt:[^>]+\\)?\\|scala\\)>[ ]+")
-  "A regular expression to match sbt and scala console prompts. The prompt MUST NOT match \"^[completions].*\"."
   :type 'string
   :group 'sbt)
 
@@ -72,10 +62,18 @@ line of output buffer."
   :type 'boolean
   :group 'sbt)
 
+(defvar sbt:prompt-regexp (concat "\\(?:"
+                                  sbt:sbt-prompt-regexp
+                                  "\\)\\|\\(?:"
+                                  sbt:console-prompt-regexp
+                                  "\\)"))
+
 (defvar sbt:quit-paste-command (if (eq system-type 'windows-nt)
                                    (kbd "C-z")
                                  (kbd "C-d"))
   "Keys for sending quit command")
+
+(defconst sbt:history-separator ";;\n")
 
 (defun sbt:initialize-for-comint-mode ()
   (sbt:require-buffer)
@@ -106,7 +104,10 @@ line.")
               ; newline that the user just inserted. Without this
               ; sometimes emacs will not give the user any feedback
               ; that the input has been sent.
-  (comint-simple-send proc string))
+  (comint-simple-send proc string)
+  ;;(message "sent %s to %s" string comint-input-ring-file-name)
+  (let ((comint-input-ring-separator sbt:history-separator))
+    (comint-write-input-ring)))
 
 (defun sbt:ansi-filter (input)
   (when (sbt:mode-p)
@@ -159,29 +160,38 @@ what `sbt:move-marker-before-prompt-filter` did."
 
 (defun sbt:switch-submode (input)
   (when (sbt:mode-p)
-    (let ((submode
+    (let ((project-root (sbt:find-root))
+          (submode
            (save-excursion
              (save-match-data
                ;; go to start of last line with text inserted by comint
                (comint-goto-process-mark)
                (skip-chars-backward " \n\r\t")
                (forward-line 0)
+               ;;(message "last line is %s" (thing-at-point 'line))
                (cond ((looking-at sbt:sbt-prompt-regexp) 'sbt)
                      ((looking-at sbt:console-prompt-regexp) 'console)
-                     ((looking-at sbt:paste-mode-prompt-regexp) 'paste-mode))))))
-      (when submode
+                     ((looking-at sbt:paste-mode-prompt-regexp) 'paste-mode)))))
+          (comint-input-history-ignore "^completions\\|// completions$")
+          (comint-input-ring-separator sbt:history-separator))
+
+      (when (and submode (not (eq submode sbt:submode)))
+        ;; set-up the new mode
         (setq sbt:submode submode)
         (setq comint-use-prompt-regexp (not (eq submode 'paste-mode)))
 
-        (let ((comint-input-history-ignore "^completions\\|// completions$")
-              (comint-input-ring-file-name
-               (cond ((eq submode 'sbt) sbt:sbt-history-file)
-                     ((eq submode 'console) sbt:console-history-file))))
-          (when (and comint-input-ring-file-name
-                     (not (equal comint-input-ring-file-name sbt:previous-history-file)))
-            (setq sbt:previous-history-file comint-input-ring-file-name)
-            (comint-read-input-ring)))))
-    input))
+        ;; clear the history
+        (ring-resize comint-input-ring 0)
+        (ring-resize comint-input-ring comint-input-ring-size)
+
+        ;; and reload (if file found)
+        (when project-root
+          (setq comint-input-ring-file-name
+                (cond ((eq submode 'sbt) (concat project-root sbt:sbt-history-file))
+                      ((eq submode 'console) (concat project-root sbt:console-history-file))))
+          (when (and comint-input-ring-file-name (file-exists-p comint-input-ring-file-name))
+            (comint-read-input-ring))))))
+  input)
 
 ;;;
 ;;; Completion functionality
@@ -269,7 +279,6 @@ what `sbt:move-marker-before-prompt-filter` did."
   ;; There may be compilation by (sbt-command "console")
   (let ((submode (buffer-local-value 'sbt:submode
                                      (get-buffer (sbt:buffer-name)))))
-    (message "submode: %s" submode)
     (when (or (eq submode 'console) (eq submode 'paste-mode))
       (comint-send-region (sbt:buffer-name) start end)
       (comint-send-string (sbt:buffer-name) "\n"))))
