@@ -217,7 +217,7 @@ what `sbt:move-marker-before-prompt-filter` did."
    (let ((submode
           (save-excursion
             (comint-goto-process-mark)
-            (beginning-of-line)
+            (comint-bol t)
             (cond ((looking-at sbt:sbt-prompt-regexp) 'sbt)
                   ((looking-at sbt:console-prompt-regexp) 'console)
                   ('t (error "process not ready (no prompt found)"))))))
@@ -244,7 +244,7 @@ what `sbt:move-marker-before-prompt-filter` did."
                                   (point))))
         mid)
     (goto-char beg)
-    (beginning-of-line)
+    (comint-bol t)
     (if (> beg end)
         (comint-goto-process-mark)
       (cond ((or (looking-at-p sbt:sbt-prompt-regexp)
