@@ -216,7 +216,7 @@ buffer called *sbt*projectdir."
     ;; (when (null project-root)
     ;;   (error "Could not find project root, type `C-h f sbt:find-root` for help."))
 
-    (when (not (or (executable-find sbt:program-name)
+    (when (not (or (executable-find sbt:program-name (file-remote-p default-directory))
                    (file-executable-p (concat project-root sbt:program-name))))
       (error "Could not find %s in %s or on PATH. Please customize the sbt:program-name variable." sbt:program-name project-root))
 
