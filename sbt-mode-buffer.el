@@ -59,7 +59,11 @@ When run in buffer with no scala project then based on number of sbt buffers thi
 	      (message "Already in sbt buffer!")
 	    (if buffer-to-switch
 		(switch-to-buffer-other-window buffer-to-switch)
-	      (message "No running sbt buffer for project %s" current-sbt-root))))
+	      (if (y-or-n-p
+		   (format
+		    "No running buffer for project %s  Start it? " current-sbt-root))
+		  (sbt-start)
+		(message "Remaining in current buffer. Project root is %s" current-sbt-root)))))
       (if root-and-buffers
 	  (switch-to-buffer-other-window
 	   (if (eq 1 (length root-and-buffers))
