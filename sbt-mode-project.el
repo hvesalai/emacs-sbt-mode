@@ -25,13 +25,13 @@
 
 (defun sbt:find-root ()
   "Starting from the current default-directory, find a parent
-directory that is an sbt root. An sbt root directory is
+directory that is an sbt root.  An sbt root directory is
 identified by the following rules:
 
-  - a directory containing a 'project/build.properties' in it.
+  - a directory containing a \"project/build.properties\" in it.
 
   - a directory that contains a file matching one of the patterns
-    '*.sbt' or 'project/*.scala' file in it.
+    \"*.sbt\" or \"project/*.scala\" file in it.
 
 The first rule is applied first and the second is used only if it
 fails to find the sbt root.
@@ -49,7 +49,7 @@ stopping criteria."
           (setq-local sbt:buffer-project-root root)))))
 
 (defun sbt:buffer-in-project-function (root)
-  "Return a lambda that returns 't if the current buffer is in the ROOT project."
+  "Return a lambda that returns t if the current buffer is in the ROOT project."
   `(lambda () (equal (sbt:find-root) ,root)))
 
 (provide 'sbt-mode-project)

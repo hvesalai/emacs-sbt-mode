@@ -19,9 +19,8 @@
 (require 'sbt-mode-comint)
 (require 'sbt-mode-rgrep)
 
-(eval-when-compile
-  (defvar sbt:submode)
-  (defun scala-mode:set-scala-syntax-mode ()))
+(defvar sbt:submode)
+(declare-function scala-mode:set-scala-syntax-mode "ext:scala-mode-syntax" ())
 
 (defvar sbt:error-face 'sbt:error)
 (defvar sbt:info-face 'sbt:info)
@@ -40,8 +39,8 @@ For example, to make SBT show up only 8 lines high at the bottom of the screen
 you can set this as follows:
 
   (defun display-sbt-at-bottom (buffer args)
-    (display-buffer-at-bottom buffer (cons '(window-height . 8) args)))
-  (setq sbt:display-buffer-action '(display-sbt-at-bottom))
+    (display-buffer-at-bottom buffer (cons \\='(window-height . 8) args)))
+  (setq sbt:display-buffer-action \\='(display-sbt-at-bottom))
 ")
 
 ;;;
