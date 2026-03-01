@@ -117,6 +117,11 @@ sbt:default-command, if no other command has yet been run)."
   (interactive)
   (sbt-command "test"))
 
+(defun sbt-do-testquick ()
+  "Run all failing tests."
+  (interactive)
+  (sbt-command "testQuick"))
+
 (defun sbt-do-clean ()
   "Execute the sbt `clean' command for the project."
   (interactive)
