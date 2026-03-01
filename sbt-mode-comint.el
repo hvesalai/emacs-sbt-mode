@@ -10,9 +10,8 @@
 (require 'sbt-mode-project)
 (require 'sbt-mode-buffer)
 
-(eval-when-compile
-  (defvar sbt:submode)
-  (defun sbt-command (c)))
+(defvar sbt:submode)
+(declare-function sbt-command "sbt-mode" (command &optional focus))
 
 (defvar ansi-color-regexp)
 (when (not (boundp 'ansi-color-regexp))
@@ -56,9 +55,9 @@ comint. Not the sbt's file."
   :group 'sbt)
 
 (defcustom sbt:scroll-to-bottom-on-output nil
-  "If `t' will always scroll sbt buffer to the bottom on insertion of a new output.
-If `nil' will stop scrolling on a first error encountered or if point is not on last
-line of output buffer."
+  "If non-nil, always scroll sbt buffer to the bottom on new output.
+If nil, stop scrolling on a first error encountered or if point
+is not on last line of output buffer."
   :type 'boolean
   :group 'sbt)
 

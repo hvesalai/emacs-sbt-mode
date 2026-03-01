@@ -42,7 +42,8 @@
 
 ;;;###autoload
 (defun sbt-grep (regexp &optional files dir confirm)
-  "Recursively grep for REGEXP in FILES in directory tree rooted at DIR. By default DIR is is the sbt project root."
+  "Recursively grep for REGEXP in FILES in directory tree rooted at DIR.
+By default DIR is the sbt project root."
   (interactive
    (progn
      (sbt:verify-defaults-for-rgrep)
@@ -60,7 +61,8 @@
 
 ;;;###autoload
 (defun sbt-find-usages (id &optional dir confirm)
-  "Recursively grep for ID in scala files in directory tree rooted at DIR. By default DIR is is the sbt project root."
+  "Recursively grep for ID in Scala files in directory tree rooted at DIR.
+By default DIR is the sbt project root."
   (interactive
    (progn
      (sbt:verify-defaults-for-rgrep)
@@ -72,7 +74,8 @@
 
 ;;;###autoload
 (defun sbt-find-definitions (id &optional confirm)
-  "Recursively grep for definition of ID in scala files in the directory tree rooted at the sbt project root."
+  "Recursively grep for definition of ID in Scala files.
+The search is rooted at the sbt project root."
   (interactive
    (progn
      (sbt:verify-defaults-for-rgrep)

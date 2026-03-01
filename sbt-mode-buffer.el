@@ -31,11 +31,12 @@
 ;;;###autoload
 (defun sbt-switch-to-active-sbt-buffer ()
   "Switch to buffer with running sbt process.
-If run in buffer in scala project then it switch to that project sbt buffer (if some exists).
-When run in buffer with no scala project then based on number of sbt buffers this happen:
+If run in a buffer in a Scala project, switch to that project's
+sbt buffer (if one exists).  When run in a buffer with no Scala
+project, the behavior depends on the number of sbt buffers:
   no sbt buffer exists - do nothing
   one sbt buffer exists - switch to that buffer
-  more than one sbt buffer exist - let user choose which buffer to switch to"
+  more than one sbt buffer - let user choose"
   (interactive)
   (let ((current-sbt-root (sbt:find-root))
 	(root-and-buffers
