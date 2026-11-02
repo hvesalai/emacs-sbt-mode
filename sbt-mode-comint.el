@@ -74,6 +74,16 @@ is not on last line of output buffer."
 
 (defconst sbt:history-separator ";;\n")
 
+(defvar-local sbt:console-scala-version nil
+  "Major Scala version of the running REPL, or nil if not known.")
+
+(defvar-local sbt:pending-paste-code nil
+  "Code strings waiting to be pasted once the console prompt appears.
+Oldest first.")
+
+(defvar-local sbt:pending-paste-files nil
+  "Temp files sent to the REPL with :load, deleted at the next prompt.")
+
 (defun sbt:initialize-for-comint-mode ()
   (sbt:require-buffer)
   (when (derived-mode-p 'comint-mode)
@@ -90,8 +100,18 @@ is not on last line of output buffer."
     (setq comint-input-sender 'sbt:input-sender)
     (setq-local sbt:previous-history-file nil)
     (setq-local sbt:submode nil)
+    (setq-local sbt:console-scala-version nil)
+    (setq-local sbt:pending-paste-files nil)
+    (setq-local sbt:pending-paste-code nil)
     (add-hook 'comint-output-filter-functions 'sbt:switch-submode)
     (add-hook 'comint-output-filter-functions 'sbt:ansi-filter)
+    ;; Must run before `sbt:switch-submode' (prepended) so that the
+    ;; version is known when the console prompt is first seen.
+    (add-hook 'comint-output-filter-functions 'sbt:detect-scala-version-filter nil t)
+    ;; Must run after `sbt:switch-submode' (appended) so that pasting
+    ;; happens once we know we are at a console prompt.
+    (add-hook 'comint-output-filter-functions 'sbt:paste-output-filter t t)
+    (add-hook 'kill-buffer-hook 'sbt:delete-all-pending-paste-files nil t)
 ))
 
 (defconst sbt:ansi-clear-line "M\\[2K"
@@ -178,6 +198,9 @@ what `sbt:move-marker-before-prompt-filter` did."
         ;; set-up the new mode
         (setq sbt:submode submode)
         (setq comint-use-prompt-regexp (not (eq submode 'paste-mode)))
+        ;; Back in sbt shell: the console (and its Scala version) is gone.
+        (when (eq submode 'sbt)
+          (setq sbt:console-scala-version nil))
 
         ;; clear the history
         (ring-resize comint-input-ring 0)
@@ -283,11 +306,89 @@ what `sbt:move-marker-before-prompt-filter` did."
       (comint-send-string (sbt:buffer-name) "\n"))))
 
 
-(defun sbt:paste-region (start end &optional no-exit)
-  "Send region (from START to END) using :paste REPL command.
+(defcustom sbt:paste-method 'auto
+  "How `sbt-paste-region' sends a region to the Scala REPL.
 
-If NO-EXIT is non-zero, this function will not end the paste
-mode."
+`auto' uses :paste for a Scala 2 REPL and :load (with a temporary
+file) for a Scala 3 REPL, which has no :paste command.  The REPL
+version is detected from the \"Welcome to Scala\" banner printed
+when the console starts; if it is not known, :load is used.
+
+`paste' always uses :paste, `load' always uses :load."
+  :type '(choice (const :tag "Detect from REPL version" auto)
+                 (const :tag "Always :paste" paste)
+                 (const :tag "Always :load" load))
+  :group 'sbt)
+
+(defconst sbt:scala-welcome-regexp "Welcome to Scala \\([0-9]+\\)\\.[0-9]+"
+  "Matches the banner printed by both Scala 2 and Scala 3 REPLs.
+Group 1 is the major version.")
+
+(defun sbt:detect-scala-version-filter (input)
+  "Record the REPL's Scala major version from its welcome banner."
+  (save-match-data
+    (when (string-match sbt:scala-welcome-regexp input)
+      (setq sbt:console-scala-version (string-to-number (match-string 1 input)))))
+  input)
+
+(defun sbt:delete-all-pending-paste-files ()
+  "Delete every temp paste file still waiting in this buffer."
+  (dolist (file sbt:pending-paste-files)
+    (ignore-errors (delete-file file)))
+  (setq sbt:pending-paste-files nil))
+
+(defun sbt:paste-output-filter (input)
+  "Handle deferred pasting when a console prompt appears.
+
+First deletes temp files whose :load the REPL has now processed,
+then sends any code queued by `sbt:paste-region'.  Meant to run
+after `sbt:switch-submode' in `comint-output-filter-functions'."
+  (when (and (eq sbt:submode 'console)
+             (save-match-data (string-match sbt:console-prompt-regexp input)))
+    (sbt:delete-all-pending-paste-files)
+    (when sbt:pending-paste-code
+      (let ((queued (nreverse sbt:pending-paste-code)))
+        (setq sbt:pending-paste-code nil)
+        (dolist (code queued)
+          (sbt:send-paste code)))))
+  input)
+
+(defun sbt:send-paste (code)
+  "Send CODE to the console in the current sbt buffer as one unit.
+Uses :paste or :load according to `sbt:paste-method' and
+`sbt:console-scala-version'.  Assumes the REPL is at its prompt."
+  (let ((method (cond ((not (eq sbt:paste-method 'auto)) sbt:paste-method)
+                      ((eq sbt:console-scala-version 2) 'paste)
+                      ((eq sbt:console-scala-version 3) 'load)
+                      (t (message "sbt-mode: Scala version of REPL unknown, using :load")
+                         'load))))
+    (if (eq method 'paste)
+        (progn
+          (comint-send-string (current-buffer) ":paste\n")
+          (comint-send-string (current-buffer) code)
+          (comint-send-string (current-buffer) "\n")
+          (comint-send-string (current-buffer) sbt:quit-paste-command))
+      ;; Create the file where the sbt process runs (TRAMP aware).
+      (let* ((file (make-nearby-temp-file "sbt-mode-paste-" nil ".scala"))
+             ;; Full path as seen by the REPL: we do not know its cwd.
+             (load-path-str (expand-file-name (file-local-name file)))
+             (coding-system-for-write 'utf-8-unix))
+        (write-region (concat code "\n") nil file nil 'silent)
+        (push file sbt:pending-paste-files)
+        (comint-send-string (current-buffer) (concat ":load " load-path-str "\n"))))))
+
+(defun sbt:paste-region (start end &optional no-exit)
+  "Send region (from START to END) to the REPL as one unit.
+
+With a Scala 2 REPL the region is sent in :paste mode.  With a
+Scala 3 REPL, which has no :paste command, the region is written
+to a temporary file and loaded with :load.  See `sbt:paste-method'.
+
+If the console is not running yet it is started, and the region
+is sent once the console prompt appears.
+
+NO-EXIT is ignored and kept for backwards compatibility."
+  (ignore no-exit)
   (unless (comint-check-proc (sbt:buffer-name))
     (error "sbt is not running in buffer %s" (sbt:buffer-name)))
   (save-excursion
@@ -301,16 +402,15 @@ mode."
     (setq start (point)))
   (unless (> end start) (error "mark a region of code first"))
   (display-buffer (sbt:buffer-name))
-  (let ((submode (buffer-local-value 'sbt:submode
-                                     (get-buffer (sbt:buffer-name)))))
-    (when (eq submode 'sbt)
-      (sbt-command "console")))
-  ;; TODO: verify if we entered "console" mode successfully.
-  (comint-send-string (sbt:buffer-name) ":paste\n")
-
-  (comint-send-region (sbt:buffer-name) start end)
-  (comint-send-string (sbt:buffer-name) "\n")
-  (unless no-exit
-    (comint-send-string (sbt:buffer-name) sbt:quit-paste-command)))
+  (let ((code (buffer-substring-no-properties start end)))
+    (with-current-buffer (sbt:buffer-name)
+      (cond ((eq sbt:submode 'console)
+             (sbt:send-paste code))
+            (t
+             ;; Queue the code; `sbt:paste-output-filter' sends it when
+             ;; the console prompt appears.
+             (push code sbt:pending-paste-code)
+             (when (eq sbt:submode 'sbt)
+               (sbt-command "console")))))))
 
 (provide 'sbt-mode-comint)

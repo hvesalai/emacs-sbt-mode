@@ -147,15 +147,15 @@ region are not sent."
 
 (defun sbt-paste-region (&optional no-exit)
   "Send the selected region (between the mark and the current
-point) to the sbt process of the current buffer's sbt project
-using :paste REPL command.  Whitespace and comments at the
-beginning or end of the region are not sent.  If the optional
-NO-EXIT is non-zero, it will not exit the :paste session, so that
-subsequent call to this function may provide additional input."
+point) to the sbt process of the current buffer's sbt project as
+one unit, so that multi-line definitions are compiled together.
+A Scala 2 REPL gets the region in :paste mode; a Scala 3 REPL
+gets it through :load and a temporary file (see
+`sbt:paste-method').  Whitespace and comments at the beginning or
+end of the region are not sent.  NO-EXIT is ignored and kept for
+backwards compatibility."
   (interactive "P")
-  ;; TODO: Currently, NO-EXIT does not work correctly.
-  ;; (sbt:paste-region (region-beginning) (region-end) arg)
-  (sbt:paste-region (region-beginning) (region-end) nil))
+  (sbt:paste-region (region-beginning) (region-end) no-exit))
 
 (defun sbt-send-eol ()
   "Send newline to the sbt process for the primary purpose of

@@ -96,8 +96,12 @@ for reworking.
 You can also send a region of code from an other buffer in the same
 project. First set the mark to the other end of the region to send and
 the point (cursor) the other. Then run the `M-x sbt-send-region`
-command. `sbt-paste-region` will enter `:paste` mode of Scala REPL, so
-that multiline statement/expression will work as expected.
+command. `sbt-paste-region` sends the region as one unit, so that
+multiline statements/expressions work as expected. With a Scala 2 REPL
+it uses `:paste` mode. The Scala 3 REPL has no `:paste` command (and
+multi-line pasting through JLine does not work inside Emacs), so there
+the region is written to a temporary file and loaded with `:load`. See
+the `sbt:paste-method` customization variable.
 
 ### Compiling
 
